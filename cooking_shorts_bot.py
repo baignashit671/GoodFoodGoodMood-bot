@@ -10,7 +10,7 @@ One run = one vertical Short (1080x1920, ~40-58 s), fully automatic:
               in Hindi (CONTENT_LANG=hi, default) or English (CONTENT_LANG=en)
   3. VOICE    free Microsoft edge-tts voice, one clip per scene, with
               word-level timestamps for the captions
-  4. VISUALS  real cooking footage from Pexels (free API, portrait videos);
+  4. VISUALS  real cooking footage from Pixabay / Pexels (free APIs);
               fallback: AI food photo (Pollinations, free) with Ken Burns
               motion; last resort: a branded text card
   5. SOUND    background music (your files in assets/music/, otherwise a
@@ -48,7 +48,7 @@ import requests
 import yaml
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 # ----------------------------------------------------------------------------
 # CONFIG (all overridable from the workflow env)
@@ -79,6 +79,7 @@ SCENE_GAP = 0.18                     # silence between scenes (s)
 GEMINI_MODELS = [m.strip() for m in os.getenv(
     "GEMINI_MODELS", "gemini-flash-latest,gemini-flash-lite-latest,gemini-pro-latest").split(",") if m.strip()]
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "").strip()
+PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "").strip()
 USE_AI_IMAGES = os.getenv("USE_AI_IMAGES", "true").lower() == "true"
 MUSIC_VOLUME = float(os.getenv("MUSIC_VOLUME", "0.16"))
 SFX_VOLUME = float(os.getenv("SFX_VOLUME", "0.22"))
@@ -384,6 +385,42 @@ def pexels_video(query: str, min_dur: float, dest: Path) -> bool:
     return False
 
 
+_used_pixabay = set()
+
+
+def pixabay_video(query: str, min_dur: float, dest: Path) -> bool:
+    """Pixabay stock video (free key, instant signup). Most clips are landscape;
+    render_scene() center-crops them to 9:16, so portrait / higher-res clips are preferred."""
+    if not PIXABAY_API_KEY or DEMO:
+        return False
+    r = _http_get("https://pixabay.com/api/videos/",
+                  params={"key": PIXABAY_API_KEY, "q": query[:100], "safesearch": "true",
+                          "video_type": "film", "per_page": 30, "order": "popular"})
+    if not r or r.status_code != 200:
+        return False
+    hits = [h for h in r.json().get("hits", []) if h["id"] not in _used_pixabay]
+
+    def best(h):
+        vs = [v for v in (h.get("videos") or {}).values() if v.get("url") and v.get("width")]
+        # want at least ~1080 px on the short side after the 9:16 crop; avoid 4K downloads
+        vs = [v for v in vs if min(v["width"], v["height"]) >= 720 and max(v["width"], v["height"]) <= 2600]
+        vs.sort(key=lambda v: (v["height"] < v["width"], abs(max(v["width"], v["height"]) - 1920)))
+        return vs[0] if vs else None
+
+    cands = [(h, best(h)) for h in hits]
+    cands = [(h, v) for h, v in cands if v]
+    cands.sort(key=lambda hv: (hv[1]["height"] < hv[1]["width"],      # portrait first
+                               hv[0].get("duration", 0) < min_dur,     # long enough
+                               random.random()))
+    for h, v in cands[:6]:
+        dl = _http_get(v["url"], timeout=180)
+        if dl and dl.status_code == 200 and len(dl.content) > 50_000:
+            dest.write_bytes(dl.content)
+            _used_pixabay.add(h["id"])
+            return True
+    return False
+
+
 def ai_image(prompt: str, dest: Path, seed: int) -> bool:
     if not USE_AI_IMAGES or DEMO:
         return False
@@ -455,7 +492,8 @@ def render_scene(i: int, scene: dict, dur: float, recipe: dict, out: Path) -> st
                f"{recipe['name']} indian food", "indian cooking"]
     for q in dict.fromkeys(q for q in queries if q.strip()):
         src = vdir / f"s{i:02d}.mp4"
-        if pexels_video(q, dur, src):
+        provider = "pexels" if pexels_video(q, dur, src) else ("pixabay" if pixabay_video(q, dur, src) else "")
+        if provider:
             try:
                 sdur = ffprobe_duration(src)
                 ss = rnd_offset(sdur, dur)
@@ -465,7 +503,7 @@ def render_scene(i: int, scene: dict, dur: float, recipe: dict, out: Path) -> st
                       f"tpad=stop_mode=clone:stop_duration={dur:.2f}")
                 run(["ffmpeg", "-y", "-v", "error", "-ss", f"{ss:.2f}", "-i", str(src),
                      "-vf", vf, *common, str(out)])
-                return f"pexels:{q}"
+                return f"{provider}:{q}"
             except Exception as e:
                 log(f"  pexels clip render failed: {e}")
 
@@ -836,8 +874,9 @@ def build_metadata(script: dict, recipe: dict, sources: list) -> tuple:
             "🛒 INGREDIENTS"] + [f"• {x}" for x in script["ingredients"]] + ["",
             "👩‍🍳 METHOD"] + [f"{i}. {x}" for i, x in enumerate(script["steps"], 1)] + ["",
             f"🔔 Subscribe to {CHANNEL_NAME} for a new Indian recipe every day!", "Good food = Good mood! 😋", ""]
-    if any(s.startswith("pexels") for s in sources):
-        desc.append("Video clips: Pexels.")
+    stock = sorted({s.split(":")[0].capitalize() for s in sources if s.startswith(("pexels", "pixabay"))})
+    if stock:
+        desc.append("Video clips: " + " & ".join(stock) + ".")
     if "ai_image" in sources:
         desc.append("Some food visuals are AI-generated.")
     desc += ["", " ".join(tags_h[:10])]
