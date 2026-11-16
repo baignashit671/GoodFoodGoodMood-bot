@@ -10,7 +10,7 @@ built and uploaded by GitHub Actions. Same idea as `devops-genius-zone-bot`, reb
 | Recipe | Next dish from `recipes.yaml` (195 Indian recipes queued, no repeats) |
 | Script | Gemini writes hook → 5-7 steps with real quantities → pro tip → serve + CTA (JSON) |
 | Voice | Free Microsoft neural voice via edge-tts — `hi-IN-SwaraNeural` (Hindi) or `en-IN-NeerjaExpressiveNeural` |
-| Visuals | Real cooking footage from **Pexels** (portrait, free license) → fallback AI food photo with Ken Burns zoom → fallback branded card |
+| Visuals | Real cooking footage from **Pixabay** (and Pexels if you have a key) → fallback AI food photo with Ken Burns zoom → fallback branded card |
 | Sound | Background music (your tracks in `assets/music/` or built-in lo-fi loop), auto-ducked under the voice + sizzle / chop / pour / whoosh SFX |
 | Captions | Word-by-word highlighted captions burned in (Hind font, Hindi + English), step label pill, big hook text; the same captions uploaded as a YouTube caption track |
 | Upload | `#shorts` title, full ingredients + method in description, tags, category Howto & Style, scheduled public at **7 PM IST**, channel guard |
@@ -28,7 +28,8 @@ Hidden folder tip for the web UI: drag the whole unzipped folder into "Upload fi
 | Secret name | Where to get it |
 |---|---|
 | `GEMINI_API_KEY` | https://aistudio.google.com/apikey — the same key as the DevOps bot works |
-| `PEXELS_API_KEY` | https://www.pexels.com/api/ → "Get started" → copy your key (free, 200 req/hour) |
+| `PIXABAY_API_KEY` | Free account at pixabay.com → open https://pixabay.com/api/docs/ while logged in → copy the key shown under `key` |
+| `PEXELS_API_KEY` *(optional)* | Only if you already have one — Pexels has paused new API keys |
 | `GOOGLE_CREDENTIALS` | Step 3 below |
 | `COOKING_PLAYLIST_ID` *(optional)* | Playlist ID (`PL...`) to auto-add every Short to |
 
