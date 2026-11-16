@@ -23,5 +23,28 @@
     "test_mode": false,
     "bot_version": "1.5.0",
     "video_id": "DitgMrcjlH0"
+  },
+  {
+    "date": "2026-11-17",
+    "recipe": "Poha",
+    "title": "Poha Recipe | Soft and Fluffy Kanda Poha in 5 Min #shorts",
+    "duration": 52.6,
+    "visuals": [
+      "pixabay:plate of poha breakfast",
+      "pixabay:washing rice strainer",
+      "pixabay:frying mustard seeds curry leaves",
+      "pixabay:frying onions pan",
+      "pixabay:adding turmeric powder spoon",
+      "pixabay:mixing poha gently",
+      "pixabay:lemon juice coriander garnish"
+    ],
+    "music": "synth-upbeat",
+    "voice": "hi-IN-SwaraNeural",
+    "lang": "hi",
+    "model": "gemini-flash-lite-latest",
+    "music_mood": "upbeat",
+    "primary_keyword": "poha recipe",
+    "test_mode": true,
+    "bot_version": "1.6.0"
   }
 ]
