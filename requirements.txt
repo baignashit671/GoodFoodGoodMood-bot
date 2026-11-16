@@ -1,0 +1,10 @@
+# GoodFoodGoodMood Shorts bot — requirements.txt (v1.0.0)
+edge-tts>=7.2.0,<8               # free Microsoft neural voice (Hindi / Indian English) + word timestamps
+google-genai>=1.0.0,<3           # Gemini recipe script (JSON)
+google-api-python-client>=2.100.0,<3
+google-auth>=2.23.0,<3
+google-auth-oauthlib>=1.1.0,<2   # reauth_youtube.py (run on your PC)
+requests>=2.31.0,<3              # Pexels + AI image downloads
+Pillow>=10.0.0,<13
+numpy>=1.24
+PyYAML>=6.0

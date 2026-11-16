@@ -1,0 +1,199 @@
+# Recipe queue for the GoodFoodGoodMood Shorts bot.
+# The bot picks the FIRST recipe here that has not been uploaded yet (see upload_log.json).
+# Add / remove / reorder freely. 'category' is only used as a hint for the script and visuals.
+recipes:
+  - {name: "Masala Chai", category: drink}
+  - {name: "Poha", category: breakfast}
+  - {name: "Aloo Paratha", category: breakfast}
+  - {name: "Rava Upma", category: breakfast}
+  - {name: "Masala Dosa", category: south-indian}
+  - {name: "Idli Sambar", category: south-indian}
+  - {name: "Medu Vada", category: south-indian}
+  - {name: "Paneer Butter Masala", category: main}
+  - {name: "Dal Tadka", category: dal}
+  - {name: "Jeera Rice", category: rice}
+  - {name: "Chole Bhature", category: main}
+  - {name: "Rajma Chawal", category: main}
+  - {name: "Pav Bhaji", category: street-food}
+  - {name: "Vada Pav", category: street-food}
+  - {name: "Pani Puri", category: street-food}
+  - {name: "Bhel Puri", category: street-food}
+  - {name: "Sev Puri", category: street-food}
+  - {name: "Dahi Puri", category: street-food}
+  - {name: "Samosa", category: snack}
+  - {name: "Kanda Bhaji", category: snack}
+  - {name: "Aloo Tikki", category: street-food}
+  - {name: "Dhokla", category: gujarati}
+  - {name: "Khandvi", category: gujarati}
+  - {name: "Thepla", category: gujarati}
+  - {name: "Undhiyu", category: gujarati}
+  - {name: "Handvo", category: gujarati}
+  - {name: "Methi Thepla", category: gujarati}
+  - {name: "Gujarati Kadhi", category: gujarati}
+  - {name: "Sev Tamatar", category: gujarati}
+  - {name: "Dal Makhani", category: dal}
+  - {name: "Palak Paneer", category: main}
+  - {name: "Kadai Paneer", category: main}
+  - {name: "Shahi Paneer", category: main}
+  - {name: "Matar Paneer", category: main}
+  - {name: "Paneer Tikka", category: snack}
+  - {name: "Malai Kofta", category: main}
+  - {name: "Aloo Gobi", category: sabzi}
+  - {name: "Bhindi Masala", category: sabzi}
+  - {name: "Baingan Bharta", category: sabzi}
+  - {name: "Jeera Aloo", category: sabzi}
+  - {name: "Dum Aloo", category: sabzi}
+  - {name: "Mix Veg Sabzi", category: sabzi}
+  - {name: "Lauki Chana Dal", category: dal}
+  - {name: "Sarson Ka Saag", category: main}
+  - {name: "Makki Ki Roti", category: bread}
+  - {name: "Butter Naan on Tawa", category: bread}
+  - {name: "Lachha Paratha", category: bread}
+  - {name: "Puri", category: bread}
+  - {name: "Bhatura", category: bread}
+  - {name: "Veg Pulao", category: rice}
+  - {name: "Veg Biryani", category: rice}
+  - {name: "Chicken Biryani", category: non-veg}
+  - {name: "Hyderabadi Dum Biryani", category: non-veg}
+  - {name: "Butter Chicken", category: non-veg}
+  - {name: "Chicken Tikka Masala", category: non-veg}
+  - {name: "Chicken 65", category: non-veg}
+  - {name: "Tandoori Chicken in Oven", category: non-veg}
+  - {name: "Chicken Korma", category: non-veg}
+  - {name: "Kadai Chicken", category: non-veg}
+  - {name: "Egg Curry", category: non-veg}
+  - {name: "Egg Bhurji", category: non-veg}
+  - {name: "Masala Omelette", category: breakfast}
+  - {name: "Mutton Rogan Josh", category: non-veg}
+  - {name: "Keema Matar", category: non-veg}
+  - {name: "Fish Curry Goan Style", category: non-veg}
+  - {name: "Prawn Masala", category: non-veg}
+  - {name: "Amritsari Fish Fry", category: non-veg}
+  - {name: "Lemon Rice", category: rice}
+  - {name: "Curd Rice", category: rice}
+  - {name: "Tamarind Rice", category: rice}
+  - {name: "Tomato Rice", category: rice}
+  - {name: "Bisi Bele Bath", category: south-indian}
+  - {name: "Rasam", category: south-indian}
+  - {name: "Uttapam", category: south-indian}
+  - {name: "Appam", category: south-indian}
+  - {name: "Pongal", category: south-indian}
+  - {name: "Coconut Chutney", category: chutney}
+  - {name: "Tomato Chutney", category: chutney}
+  - {name: "Green Chutney", category: chutney}
+  - {name: "Imli Chutney", category: chutney}
+  - {name: "Mango Pickle Quick", category: chutney}
+  - {name: "Boondi Raita", category: side}
+  - {name: "Cucumber Raita", category: side}
+  - {name: "Kachumber Salad", category: side}
+  - {name: "Masala Papad", category: snack}
+  - {name: "Kathi Roll", category: street-food}
+  - {name: "Paneer Kathi Roll", category: street-food}
+  - {name: "Frankie", category: street-food}
+  - {name: "Dabeli", category: street-food}
+  - {name: "Misal Pav", category: street-food}
+  - {name: "Pav Bhaji Masala Toast", category: street-food}
+  - {name: "Bombay Sandwich", category: street-food}
+  - {name: "Masala Maggi", category: snack}
+  - {name: "Veg Hakka Noodles", category: indo-chinese}
+  - {name: "Gobi Manchurian", category: indo-chinese}
+  - {name: "Chilli Paneer", category: indo-chinese}
+  - {name: "Veg Fried Rice", category: indo-chinese}
+  - {name: "Spring Roll", category: indo-chinese}
+  - {name: "Momos", category: street-food}
+  - {name: "Aloo Chaat", category: street-food}
+  - {name: "Papdi Chaat", category: street-food}
+  - {name: "Dahi Bhalla", category: street-food}
+  - {name: "Ragda Pattice", category: street-food}
+  - {name: "Kachori", category: snack}
+  - {name: "Mathri", category: snack}
+  - {name: "Namak Pare", category: snack}
+  - {name: "Chakli", category: snack}
+  - {name: "Murukku", category: snack}
+  - {name: "Banana Chips", category: snack}
+  - {name: "Makhana Roast", category: snack}
+  - {name: "Corn Chaat", category: snack}
+  - {name: "Sabudana Khichdi", category: fasting}
+  - {name: "Sabudana Vada", category: fasting}
+  - {name: "Moong Dal Khichdi", category: dal}
+  - {name: "Masoor Dal", category: dal}
+  - {name: "Chana Masala", category: main}
+  - {name: "Kadhi Pakora", category: main}
+  - {name: "Besan Chilla", category: breakfast}
+  - {name: "Moong Dal Chilla", category: breakfast}
+  - {name: "Rava Dosa", category: south-indian}
+  - {name: "Neer Dosa", category: south-indian}
+  - {name: "Pesarattu", category: south-indian}
+  - {name: "Gajar Ka Halwa", category: sweet}
+  - {name: "Suji Halwa", category: sweet}
+  - {name: "Kheer", category: sweet}
+  - {name: "Seviyan Kheer", category: sweet}
+  - {name: "Gulab Jamun", category: sweet}
+  - {name: "Rasgulla", category: sweet}
+  - {name: "Jalebi", category: sweet}
+  - {name: "Besan Ladoo", category: sweet}
+  - {name: "Coconut Ladoo", category: sweet}
+  - {name: "Rava Ladoo", category: sweet}
+  - {name: "Kaju Katli", category: sweet}
+  - {name: "Shrikhand", category: sweet}
+  - {name: "Mango Lassi", category: drink}
+  - {name: "Sweet Lassi", category: drink}
+  - {name: "Masala Chaas", category: drink}
+  - {name: "Nimbu Pani", category: drink}
+  - {name: "Jaljeera", category: drink}
+  - {name: "Thandai", category: drink}
+  - {name: "Cold Coffee", category: drink}
+  - {name: "Rose Milk", category: drink}
+  - {name: "Badam Milk", category: drink}
+  - {name: "Haldi Doodh", category: drink}
+  - {name: "Kulfi", category: sweet}
+  - {name: "Malpua", category: sweet}
+  - {name: "Modak", category: sweet}
+  - {name: "Puran Poli", category: sweet}
+  - {name: "Mysore Pak", category: sweet}
+  - {name: "Rabri", category: sweet}
+  - {name: "Phirni", category: sweet}
+  - {name: "Mohanthal", category: gujarati}
+  - {name: "Basundi", category: sweet}
+  - {name: "Shahi Tukda", category: sweet}
+  - {name: "Litti Chokha", category: main}
+  - {name: "Dal Baati", category: main}
+  - {name: "Gatte Ki Sabzi", category: main}
+  - {name: "Ker Sangri", category: main}
+  - {name: "Pindi Chole", category: main}
+  - {name: "Chana Dal Fry", category: dal}
+  - {name: "Aloo Matar", category: sabzi}
+  - {name: "Paneer Bhurji", category: main}
+  - {name: "Tawa Pulao", category: rice}
+  - {name: "Kashmiri Pulao", category: rice}
+  - {name: "Hara Bhara Kabab", category: snack}
+  - {name: "Dahi Ke Kabab", category: snack}
+  - {name: "Veg Cutlet", category: snack}
+  - {name: "Bread Pakora", category: snack}
+  - {name: "Paneer Pakora", category: snack}
+  - {name: "Mirchi Vada", category: snack}
+  - {name: "Onion Rings Desi Style", category: snack}
+  - {name: "Aloo Bonda", category: snack}
+  - {name: "Batata Vada", category: snack}
+  - {name: "Upma Kozhukattai", category: south-indian}
+  - {name: "Avial", category: south-indian}
+  - {name: "Kerala Egg Roast", category: non-veg}
+  - {name: "Chettinad Chicken", category: non-veg}
+  - {name: "Goan Prawn Curry", category: non-veg}
+  - {name: "Chicken Lollipop", category: non-veg}
+  - {name: "Tandoori Paneer Tikka on Tawa", category: snack}
+  - {name: "Methi Malai Matar", category: main}
+  - {name: "Navratan Korma", category: main}
+  - {name: "Veg Kolhapuri", category: main}
+  - {name: "Paneer Do Pyaza", category: main}
+  - {name: "Mushroom Masala", category: main}
+  - {name: "Soya Chunks Curry", category: main}
+  - {name: "Kala Chana Curry", category: main}
+  - {name: "Lobia Curry", category: main}
+  - {name: "Moong Sprouts Salad", category: side}
+  - {name: "Peanut Chaat", category: snack}
+  - {name: "Khaman", category: gujarati}
+  - {name: "Fafda", category: gujarati}
+  - {name: "Muthia", category: gujarati}
+  - {name: "Dal Dhokli", category: gujarati}
+  - {name: "Khichu", category: gujarati}
