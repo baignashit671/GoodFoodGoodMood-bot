@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "date": "2026-11-17",
+    "recipe": "Masala Chai",
+    "title": "Masala Chai Recipe | Tapri Style Kadak Chai in 5 Minutes #shorts",
+    "duration": 50.8,
+    "visuals": [
+      "ai_image",
+      "wikimedia:Masala Chai",
+      "wikimedia:Masala Chai",
+      "ai_image",
+      "wikimedia:Masala Chai",
+      "wikimedia:pouring milk into tea",
+      "ai_image",
+      "wikimedia:Masala Chai"
+    ],
+    "music": "synth-desi",
+    "voice": "hi-IN-SwaraNeural",
+    "lang": "hi",
+    "model": "gemini-flash-lite-latest",
+    "music_mood": "desi",
+    "primary_keyword": "masala chai recipe",
+    "test_mode": false,
+    "bot_version": "1.5.0",
+    "video_id": "DitgMrcjlH0"
+  }
+]
