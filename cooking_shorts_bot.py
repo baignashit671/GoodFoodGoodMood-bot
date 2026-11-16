@@ -48,7 +48,7 @@ import requests
 import yaml
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 # ----------------------------------------------------------------------------
 # CONFIG (all overridable from the workflow env)
@@ -77,7 +77,7 @@ TTS_RATE = os.getenv("TTS_RATE", "+8%")
 MAX_SECONDS = float(os.getenv("MAX_SECONDS", "58"))
 SCENE_GAP = 0.18                     # silence between scenes (s)
 GEMINI_MODELS = [m.strip() for m in os.getenv(
-    "GEMINI_MODELS", "gemini-flash-latest,gemini-flash-lite-latest,gemini-pro-latest").split(",") if m.strip()]
+    "GEMINI_MODELS", "gemini-flash-latest,gemini-flash-lite-latest").split(",") if m.strip()]
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "").strip()
 PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "").strip()
 USE_AI_IMAGES = os.getenv("USE_AI_IMAGES", "true").lower() == "true"
@@ -229,6 +229,32 @@ def _validate_script(d: dict) -> dict:
     return d
 
 
+_SKIP_MODEL_WORDS = ("image", "tts", "audio", "live", "embedding", "vision", "thinking-exp", "learnlm", "gemma")
+
+
+def _candidate_models(client) -> list:
+    """Configured models first, then every other *flash* model this API key can use
+    (asked from the API itself, so retired / renamed models never break the run)."""
+    models = list(GEMINI_MODELS)
+    try:
+        found = []
+        for m in client.models.list():
+            name = (getattr(m, "name", "") or "").replace("models/", "")
+            actions = getattr(m, "supported_actions", None) or []
+            if "flash" not in name or any(w in name for w in _SKIP_MODEL_WORDS):
+                continue
+            if actions and "generateContent" not in actions:
+                continue
+            found.append(name)
+        # newest-looking first: "latest" aliases, then higher version numbers, preview last
+        found.sort(key=lambda n: ("latest" not in n, "preview" in n or "exp" in n,
+                                  [-int(x) for x in re.findall(r"\d+", n)[:2]]))
+        models += [n for n in found if n not in models]
+    except Exception as e:
+        log(f"  could not list Gemini models ({str(e)[:120]}) - using GEMINI_MODELS only")
+    return models
+
+
 def generate_script(recipe: dict) -> dict:
     if DEMO:
         return _validate_script(DEMO_SCRIPT)
@@ -239,23 +265,41 @@ def generate_script(recipe: dict) -> dict:
         raise SystemExit("GEMINI_API_KEY is not set")
     client = genai.Client(api_key=key, http_options={"timeout": 120_000})
     cfg = types.GenerateContentConfig(response_mime_type="application/json", temperature=0.9)
+    models = _candidate_models(client)
+    log(f"Gemini models to try: {', '.join(models[:8])}")
+    deadline = time.time() + float(os.getenv("GEMINI_MAX_WAIT_MIN", "20")) * 60
     last = None
-    for model in GEMINI_MODELS:
-        for attempt in (1, 2):
-            try:
-                log(f"Gemini: {model} (attempt {attempt})")
-                resp = client.models.generate_content(model=model, contents=_prompt(recipe), config=cfg)
-                text = (resp.text or "").strip()
-                text = re.sub(r"^```(?:json)?|```$", "", text, flags=re.M).strip()
-                data = _validate_script(json.loads(text))
-                data["_model"] = model
-                return data
-            except Exception as e:
-                last = e
-                log(f"  failed: {str(e)[:200]}")
-                time.sleep(4 * attempt)
+    # Two passes over the list: a 503 "high demand" spike usually clears within minutes.
+    for rnd in (1, 2):
+        for model in models:
+            for attempt in (1, 2, 3):
+                if time.time() > deadline:
+                    raise SystemExit(f"Gemini still unavailable after the wait budget, no video this run. Last: {last}")
+                try:
+                    log(f"Gemini: {model} (round {rnd}, attempt {attempt})")
+                    resp = client.models.generate_content(model=model, contents=_prompt(recipe), config=cfg)
+                    text = (resp.text or "").strip()
+                    text = re.sub(r"^```(?:json)?|```$", "", text, flags=re.M).strip()
+                    data = _validate_script(json.loads(text))
+                    data["_model"] = model
+                    return data
+                except Exception as e:
+                    last = e
+                    msg = str(e)
+                    log(f"  failed: {msg[:160]}")
+                    if "404" in msg[:20] or "NOT_FOUND" in msg or "limit: 0" in msg:
+                        break                                   # model not usable on this key -> next model
+                    if "429" in msg[:20] or "RESOURCE_EXHAUSTED" in msg:
+                        break                                   # quota for this model used up -> next model
+                    if "503" in msg[:20] or "UNAVAILABLE" in msg or "overloaded" in msg.lower():
+                        time.sleep(min(15 * attempt * rnd, 60))  # overloaded -> back off and retry
+                        continue
+                    time.sleep(3)                               # bad JSON etc. -> quick retry
+        if rnd == 1:
+            log("  all models failed once - waiting 90 s before the second round")
+            time.sleep(90)
     # No generic offline script on purpose: a weak video hurts a cooking channel more than a skipped day.
-    raise SystemExit(f"All Gemini models failed, no video today. Last error: {last}")
+    raise SystemExit(f"All Gemini models failed, no video this run. Last error: {last}")
 
 
 # ----------------------------------------------------------------------------
@@ -388,17 +432,45 @@ def pexels_video(query: str, min_dur: float, dest: Path) -> bool:
 _used_pixabay = set()
 
 
+PIXABAY_CACHE = ROOT / "cache" / "pixabay"
+
+
+def _pixabay_search(query: str):
+    """Pixabay API rule: search responses must be cached for 24 h. Cached on disk
+    (persisted between runs by actions/cache in the workflow)."""
+    import hashlib
+    PIXABAY_CACHE.mkdir(parents=True, exist_ok=True)
+    f = PIXABAY_CACHE / (hashlib.sha1(query.lower().strip().encode()).hexdigest() + ".json")
+    if f.exists() and time.time() - f.stat().st_mtime < 24 * 3600:
+        try:
+            return json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    r = _http_get("https://pixabay.com/api/videos/",
+                  params={"key": PIXABAY_API_KEY, "q": query[:100], "safesearch": "true",
+                          "video_type": "film", "per_page": 30, "order": "popular"})
+    if not r or r.status_code != 200:
+        if r is not None:
+            log(f"  pixabay HTTP {r.status_code}: {r.text[:120]}")
+        return None
+    data = r.json()
+    f.write_text(json.dumps(data), encoding="utf-8")
+    # drop entries older than 24 h so the cache never grows unbounded
+    for old in PIXABAY_CACHE.glob("*.json"):
+        if time.time() - old.stat().st_mtime > 24 * 3600:
+            old.unlink(missing_ok=True)
+    return data
+
+
 def pixabay_video(query: str, min_dur: float, dest: Path) -> bool:
     """Pixabay stock video (free key, instant signup). Most clips are landscape;
     render_scene() center-crops them to 9:16, so portrait / higher-res clips are preferred."""
     if not PIXABAY_API_KEY or DEMO:
         return False
-    r = _http_get("https://pixabay.com/api/videos/",
-                  params={"key": PIXABAY_API_KEY, "q": query[:100], "safesearch": "true",
-                          "video_type": "film", "per_page": 30, "order": "popular"})
-    if not r or r.status_code != 200:
+    data = _pixabay_search(query)
+    if data is None:
         return False
-    hits = [h for h in r.json().get("hits", []) if h["id"] not in _used_pixabay]
+    hits = [h for h in data.get("hits", []) if h["id"] not in _used_pixabay]
 
     def best(h):
         vs = [v for v in (h.get("videos") or {}).values() if v.get("url") and v.get("width")]
