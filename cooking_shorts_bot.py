@@ -50,7 +50,7 @@ import requests
 import yaml
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-VERSION = "1.5.0"
+VERSION = "1.5.1"
 
 # ----------------------------------------------------------------------------
 # CONFIG (all overridable from the workflow env)
@@ -170,8 +170,11 @@ def save_log_entry(entry: dict):
     LOG_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def pick_recipe() -> dict:
+def pick_recipe(channel_titles=None) -> dict:
+    """Next recipe not uploaded yet. 'Uploaded' = in upload_log.json OR its name appears in the title of one
+    of the channel's recent uploads (so a wiped/overwritten log can never cause a repeat)."""
     recipes = (yaml.safe_load(RECIPES_FILE.read_text(encoding="utf-8")) or {}).get("recipes", [])
+    titles = " || ".join(t.lower() for t in (channel_titles or []))
     if RECIPE_OVERRIDE:
         for r in recipes:
             if r["name"].lower() == RECIPE_OVERRIDE.lower():
@@ -179,7 +182,7 @@ def pick_recipe() -> dict:
         return {"name": RECIPE_OVERRIDE, "category": "main"}
     done = {e.get("recipe", "").lower() for e in load_log() if not e.get("test_mode")}
     for r in recipes:
-        if r["name"].lower() not in done:
+        if r["name"].lower() not in done and r["name"].lower() not in titles:
             return r
     # Every recipe used once: start a second round with a "style" twist.
     r = dict(recipes[datetime.now(IST).timetuple().tm_yday % len(recipes)])
@@ -1274,6 +1277,24 @@ def channel_guard(yt):
                          "Re-run reauth_youtube.py and pick the cooking channel.")
 
 
+def recent_upload_titles(yt, limit=200) -> list:
+    """Titles of the channel's latest uploads (1 quota unit per 50)."""
+    try:
+        ch = yt.channels().list(part="contentDetails", mine=True).execute()["items"][0]
+        pl = ch["contentDetails"]["relatedPlaylists"]["uploads"]
+        titles, token = [], None
+        while len(titles) < limit:
+            r = yt.playlistItems().list(part="snippet", playlistId=pl, maxResults=50, pageToken=token).execute()
+            titles += [it["snippet"]["title"] for it in r.get("items", [])]
+            token = r.get("nextPageToken")
+            if not token:
+                break
+        return titles
+    except Exception as e:
+        log(f"  could not read channel uploads ({str(e)[:120]}) - using upload_log.json only")
+        return []
+
+
 def compute_publish_at():
     if PUBLISH_AT_IST_HOUR.lower() == "off":
         return None
@@ -1475,20 +1496,44 @@ def set_thumbnail(yt, vid, thumb):
             time.sleep(30)
 
 
-def post_first_comment(yt, vid, script, recipe):
-    """First comment with the recipe summary + an engagement question (comments help Shorts reach).
-    The API cannot pin it - pin it once in YouTube Studio if you like."""
-    if not POST_FIRST_COMMENT:
-        return
+def comment_text(script, recipe) -> str:
     ing = ", ".join(script["ingredients"][:8])
-    text = (f"📌 {recipe['name']} ingredients: {ing}\n\n"
-            f"Aapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋")
+    return (f"📌 {recipe['name']} ingredients: {ing}\n\n"
+            f"Aapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋")[:9000]
+
+
+def _post_comment(yt, vid, text) -> bool:
     try:
         yt.commentThreads().insert(part="snippet", body={"snippet": {
-            "videoId": vid, "topLevelComment": {"snippet": {"textOriginal": text[:9000]}}}}).execute()
-        log("  first comment posted")
+            "videoId": vid, "topLevelComment": {"snippet": {"textOriginal": text}}}}).execute()
+        return True
     except Exception as e:
-        log(f"  first comment skipped: {str(e)[:150]}")
+        log(f"  comment on {vid} not posted yet: {str(e)[:120]}")
+        return False
+
+
+def post_pending_comments(yt):
+    """YouTube refuses comments on private/scheduled videos, so the recipe comment is posted on a LATER run,
+    once that Short is public. Pin it once in YouTube Studio if you like (the API cannot pin)."""
+    if not POST_FIRST_COMMENT:
+        return
+    logs = load_log()
+    changed = False
+    for e in logs[-7:]:
+        if e.get("test_mode") or not e.get("video_id") or e.get("comment_posted") or not e.get("comment_text"):
+            continue
+        try:
+            it = yt.videos().list(part="status", id=e["video_id"]).execute().get("items", [])
+        except Exception:
+            continue
+        if not it or it[0]["status"].get("privacyStatus") != "public":
+            continue
+        if _post_comment(yt, e["video_id"], e["comment_text"]):
+            e["comment_posted"] = True
+            changed = True
+            log(f"  recipe comment posted on {e['video_id']}")
+    if changed:
+        LOG_FILE.write_text(json.dumps(logs, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 # ----------------------------------------------------------------------------
@@ -1499,12 +1544,14 @@ def main():
         f"| test={TEST_MODE} demo={DEMO}")
     if not FONT_BOLD.exists():
         raise SystemExit(f"Missing font {FONT_BOLD}")
-    recipe = pick_recipe()
-    log(f"Recipe: {recipe['name']}" + (f" ({recipe['twist']})" if recipe.get("twist") else ""))
-    yt = None
+    yt, titles = None, []
     if not TEST_MODE:
         yt = youtube_service()
         channel_guard(yt)              # fail BEFORE spending time on a video for the wrong channel
+        titles = recent_upload_titles(yt)
+        post_pending_comments(yt)      # yesterday's Short is public now -> its recipe comment goes up
+    recipe = pick_recipe(titles)
+    log(f"Recipe: {recipe['name']}" + (f" ({recipe['twist']})" if recipe.get("twist") else ""))
 
     script = generate_script(recipe)
     log(f"Title: {script['title']}  ({len(script['scenes'])} scenes, model={script.get('_model', 'demo')})")
@@ -1539,8 +1586,10 @@ def main():
     upload_captions(yt, vid, res["srt"])
     add_to_playlist(yt, vid, playlist_id)
     set_thumbnail(yt, vid, res.get("thumbnail"))
-    post_first_comment(yt, vid, script, recipe)
     entry["video_id"] = vid
+    entry["comment_text"] = comment_text(script, recipe)
+    if not compute_publish_at():                       # already public -> comment right away
+        entry["comment_posted"] = _post_comment(yt, vid, entry["comment_text"])
     save_log_entry(entry)
 
 
