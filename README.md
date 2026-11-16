@@ -10,10 +10,14 @@ built and uploaded by GitHub Actions. Same idea as `devops-genius-zone-bot`, reb
 | Recipe | Next dish from `recipes.yaml` (195 Indian recipes queued, no repeats) |
 | Script | Gemini writes hook → 5-7 steps with real quantities → pro tip → serve + CTA (JSON) |
 | Voice | Free Microsoft neural voice via edge-tts — `hi-IN-SwaraNeural` (Hindi) or `en-IN-NeerjaExpressiveNeural` |
-| Visuals | Real cooking footage from **Pixabay** (and Pexels if you have a key) → fallback AI food photo with Ken Burns zoom → fallback branded card |
+| Visuals | Per scene, first that works: **your own clips** (`assets/clips/`) → Pexels / **Pixabay** stock video → free AI food photo (**Pollinations**, optional **Cloudflare Workers AI**) → public-domain photo (**Wikimedia Commons**, CC0/PD only) → branded card |
 | Sound | Background music (your tracks in `assets/music/` or built-in lo-fi loop), auto-ducked under the voice + sizzle / chop / pour / whoosh SFX |
 | Captions | Word-by-word highlighted captions burned in (Hind font, Hindi + English), step label pill, big hook text; the same captions uploaded as a YouTube caption track |
-| Upload | `#shorts` title, full ingredients + method in description, tags, category Howto & Style, scheduled public at **7 PM IST**, channel guard |
+| Thumbnail | Best (most colourful/sharp) food frame + huge 2-4 word text + dish pill, set via API after processing (channel must be phone-verified: youtube.com/verify) |
+| Animation | Animated emoji stickers (pop + bob + tilt), punch-in zoom on every cut, loop-friendly last line for rewatches |
+| Music | Mood per recipe (`upbeat / desi / lofi / festive / chill`) picked by Gemini; your tracks from `assets/music/<mood>/`, started at their most energetic part; built-in tabla/lo-fi loops as fallback |
+| SEO | Keyword-first English title + Hindi title localization, keyword-rich first 2 lines, full recipe, "you searched for" phrases, ≤12 hashtags, ≤500-char tags, auto category playlist, first comment, captions track |
+| Upload | Category Howto & Style, audio language Hindi, scheduled public at **7 PM IST**, channel guard |
 
 Format: 1080×1920, 30 fps, ~40–58 s, loudness-normalised to -14 LUFS.
 
@@ -31,6 +35,8 @@ Hidden folder tip for the web UI: drag the whole unzipped folder into "Upload fi
 | `PIXABAY_API_KEY` | Free account at pixabay.com → open https://pixabay.com/api/docs/ while logged in → copy the key shown under `key` |
 | `PEXELS_API_KEY` *(optional)* | Only if you already have one — Pexels has paused new API keys |
 | `GOOGLE_CREDENTIALS` | Step 3 below |
+| `POLLINATIONS_API_KEY` *(optional)* | Free at https://enter.pollinations.ai — removes the anonymous throttle/watermark |
+| `CF_ACCOUNT_ID` + `CF_API_TOKEN` *(optional)* | Free Cloudflare account → Workers AI → API token with *Workers AI* permission; daily free FLUX images |
 | `COOKING_PLAYLIST_ID` *(optional)* | Playlist ID (`PL...`) to auto-add every Short to |
 
 Repo → **Settings → Secrets and variables → Actions → New repository secret**.
@@ -62,6 +68,8 @@ Actions → **Daily Cooking Short** → Run workflow → `test_mode = true` → 
 | English instead of Hindi | workflow input `lang = en` or set `CONTENT_LANG: "en"` |
 | Male Hindi voice | `TTS_VOICE: "hi-IN-MadhurNeural"` in the workflow env |
 | Your own music | drop `.mp3` files into `assets/music/` |
+| Your own footage | drop clips named by keywords into `assets/clips/` (e.g. `onion-frying-pan.mp4`) — used first |
+| Change visual priority | `VISUAL_ORDER` in the workflow (e.g. `own,pixabay,wikimedia,pollinations`) |
 | Different dish order | edit `recipes.yaml` (top = next) |
 | One specific dish today | Run workflow → `recipe = Pav Bhaji` |
 | No AI images (stock footage only) | `USE_AI_IMAGES: "false"` |
@@ -74,6 +82,7 @@ upload_log.json                what was uploaded (committed by the workflow)
 reauth_youtube.py              one-time YouTube token (run on your PC)
 assets/fonts/Hind-*.ttf        Devanagari + Latin caption font (SIL OFL)
 assets/music/                  optional background tracks
+assets/clips/                  optional own cooking clips (used first)
 .github/workflows/daily_shorts.yml
 ```
 

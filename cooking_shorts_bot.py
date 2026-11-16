@@ -10,7 +10,9 @@ One run = one vertical Short (1080x1920, ~40-58 s), fully automatic:
               in Hindi (CONTENT_LANG=hi, default) or English (CONTENT_LANG=en)
   3. VOICE    free Microsoft edge-tts voice, one clip per scene, with
               word-level timestamps for the captions
-  4. VISUALS  real cooking footage from Pixabay / Pexels (free APIs);
+  4. VISUALS  your own clips (assets/clips) -> Pexels / Pixabay stock video ->
+              free AI food photos (Pollinations, Cloudflare Workers AI) ->
+              public-domain photos (Wikimedia Commons) -> branded card;
               fallback: AI food photo (Pollinations, free) with Ken Burns
               motion; last resort: a branded text card
   5. SOUND    background music (your files in assets/music/, otherwise a
@@ -48,7 +50,7 @@ import requests
 import yaml
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-VERSION = "1.2.0"
+VERSION = "1.5.0"
 
 # ----------------------------------------------------------------------------
 # CONFIG (all overridable from the workflow env)
@@ -60,6 +62,10 @@ LOG_FILE = ROOT / "upload_log.json"
 RECIPES_FILE = ROOT / os.getenv("RECIPES_FILE", "recipes.yaml")
 FONT_DIR = ROOT / "assets" / "fonts"
 MUSIC_DIR = ROOT / "assets" / "music"
+STICKER_DIR = ROOT / "assets" / "stickers"
+USE_STICKERS = os.getenv("USE_STICKERS", "true").lower() == "true"
+STICKERS = ("fire", "yum", "heart_eyes", "drool", "chef", "sparkles", "hundred", "tea", "curry", "chili",
+            "thumbs_up", "clap", "point_down", "bell", "heart", "star_struck")
 FONT_BOLD = FONT_DIR / "Hind-Bold.ttf"
 FONT_SEMI = FONT_DIR / "Hind-SemiBold.ttf"
 FONT_NAME = "Hind"  # family name inside the .ttf (used by libass)
@@ -80,6 +86,15 @@ GEMINI_MODELS = [m.strip() for m in os.getenv(
     "GEMINI_MODELS", "gemini-flash-latest,gemini-flash-lite-latest").split(",") if m.strip()]
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "").strip()
 PIXABAY_API_KEY = os.getenv("PIXABAY_API_KEY", "").strip()
+POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY", "").strip()   # optional: faster, no watermark
+CF_ACCOUNT_ID = os.getenv("CF_ACCOUNT_ID", "").strip()                 # optional: Cloudflare Workers AI
+CF_API_TOKEN = os.getenv("CF_API_TOKEN", "").strip()
+USE_WIKIMEDIA = os.getenv("USE_WIKIMEDIA", "true").lower() == "true"
+CLIPS_DIR = ROOT / "assets" / "clips"
+# Order of visual sources per scene (first one that delivers wins).
+VISUAL_ORDER = [x.strip() for x in os.getenv(
+    "VISUAL_ORDER", "own,pexels,pixabay,pollinations,cloudflare,wikimedia").split(",") if x.strip()]
+HTTP_UA = "GoodFoodShortsBot/1.3 (https://www.youtube.com/@GoodFoodGoodMoodRecipies; automated recipe shorts)"
 USE_AI_IMAGES = os.getenv("USE_AI_IMAGES", "true").lower() == "true"
 MUSIC_VOLUME = float(os.getenv("MUSIC_VOLUME", "0.16"))
 SFX_VOLUME = float(os.getenv("SFX_VOLUME", "0.22"))
@@ -87,6 +102,19 @@ PUBLISH_AT_IST_HOUR = os.getenv("PUBLISH_AT_IST_HOUR", "19")     # "off" = publi
 YOUTUBE_CATEGORY_ID = os.getenv("YOUTUBE_CATEGORY_ID", "26")     # 26 = Howto & Style
 PLAYLIST_ID = os.getenv("PLAYLIST_ID", "").strip()
 RECIPE_OVERRIDE = os.getenv("RECIPE_OVERRIDE", "").strip()
+AUTO_PLAYLISTS = os.getenv("AUTO_PLAYLISTS", "true").lower() == "true"   # one playlist per recipe category
+POST_FIRST_COMMENT = os.getenv("POST_FIRST_COMMENT", "true").lower() == "true"
+SET_THUMBNAIL = os.getenv("SET_THUMBNAIL", "true").lower() == "true"
+MUSIC_MOODS = ("upbeat", "desi", "lofi", "festive", "chill")
+CATEGORY_PLAYLISTS = {
+    "breakfast": "Indian Breakfast Recipes", "street-food": "Indian Street Food Recipes",
+    "sweet": "Indian Sweets & Desserts", "drink": "Chai, Lassi & Indian Drinks",
+    "south-indian": "South Indian Recipes", "gujarati": "Gujarati Recipes",
+    "non-veg": "Non-Veg Indian Recipes", "indo-chinese": "Indo-Chinese Recipes",
+    "snack": "Indian Snacks Recipes", "rice": "Rice, Pulao & Biryani Recipes", "dal": "Dal Recipes",
+    "sabzi": "Sabzi Recipes", "bread": "Roti, Paratha & Puri Recipes", "chutney": "Chutney & Pickle Recipes",
+    "side": "Raita & Salad Recipes", "main": "Indian Main Course Recipes", "fasting": "Vrat / Fasting Recipes",
+}
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
@@ -192,19 +220,34 @@ Rules:
 - 'image_prompt': ENGLISH prompt for a photorealistic overhead/close-up food photo of that scene, Indian kitchen, natural light.
 - 'sfx': one of "sizzle", "chop", "pour", "none" — the sound that fits the scene.
 - 'label': 1-4 word on-screen step label, e.g. "Step 2: Tadka", "Pro Tip", "Serve hot".
+- 'sticker': one animated emoji sticker for the scene, one of: fire, yum, heart_eyes, drool, chef, sparkles,
+  hundred, tea, curry, chili, thumbs_up, clap, point_down, bell, heart, star_struck, none.
+  Hook -> drool/fire/star_struck, pro tip -> sparkles/hundred, spicy step -> chili, last scene -> bell. Vary them.
+- LOOP: Shorts replay automatically. Make the LAST 'say' line end with a short phrase that flows naturally back
+  into the hook's first words, so the replay feels seamless and people watch it again.
 
 Return ONLY JSON with this exact shape:
 {{
   "title": "catchy YouTube title, max 70 chars, include the dish name, no hashtags",
   "hook_overlay": "2-5 word big on-screen text for scene 1",
   "scenes": [
-    {{"say": "...", "label": "...", "pexels_query": "...", "image_prompt": "...", "sfx": "none"}}
+    {{"say": "...", "label": "...", "pexels_query": "...", "image_prompt": "...", "sfx": "none", "sticker": "yum"}}
   ],
   "ingredients": ["quantity + ingredient", "..."],
   "steps": ["short method step", "..."],
   "description": "2-3 line intro for the YouTube description (no hashtags)",
   "tags": ["12-18 search tags, mix English + Hinglish, e.g. '{recipe['name'].lower()} recipe'"],
-  "hashtags": ["#shorts", "#indianfood", "... 5-8 total"]
+  "hashtags": ["#shorts", "#indianfood", "... 5-8 total"],
+  "music_mood": "one of: upbeat, desi, lofi, festive, chill (what fits this dish's vibe)",
+  "seo": {{
+    "primary_keyword": "the exact phrase people type in YouTube search, e.g. '{recipe['name'].lower()} recipe'",
+    "title_en": "SEARCH title, max 70 chars, STARTS with the primary keyword, then a benefit/hook, e.g. 'Masala Chai Recipe | Tapri Style Kadak Chai in 5 Min'",
+    "title_hi": "same title in Hindi (Devanagari), max 70 chars, include the dish name",
+    "description_hook": "first 2 description lines, max 150 chars, natural sentence containing the primary keyword + 1 secondary keyword",
+    "description_hi": "2-line Hindi (Devanagari) summary for Hindi viewers",
+    "secondary_keywords": ["6-10 related search phrases people really search: hinglish + english, e.g. 'chai kaise banaye', 'adrak wali chai'"],
+    "thumbnail_text": "2-4 word BIG thumbnail text in the video's language, emotional/curiosity, e.g. 'TAPRI WALI CHAI' or 'असली स्वाद का राज'"
+  }}
 }}"""
 
 
@@ -219,6 +262,8 @@ def _validate_script(d: dict) -> dict:
         s.setdefault("image_prompt", "indian food close up")
         if s.get("sfx") not in ("sizzle", "chop", "pour", "none"):
             s["sfx"] = "none"
+        if s.get("sticker") not in STICKERS:
+            s["sticker"] = "none"
     d["scenes"] = scenes
     if not d.get("title"):
         raise ValueError("missing title")
@@ -226,6 +271,17 @@ def _validate_script(d: dict) -> dict:
     for k in ("ingredients", "steps", "tags", "hashtags"):
         d[k] = [str(x).strip() for x in (d.get(k) or []) if str(x).strip()]
     d.setdefault("description", "")
+    if d.get("music_mood") not in MUSIC_MOODS:
+        d["music_mood"] = "desi"
+    seo = d.get("seo") if isinstance(d.get("seo"), dict) else {}
+    seo.setdefault("primary_keyword", "")
+    seo.setdefault("title_en", d["title"])
+    seo.setdefault("title_hi", "")
+    seo.setdefault("description_hook", d.get("description", ""))
+    seo.setdefault("description_hi", "")
+    seo["secondary_keywords"] = [str(x).strip() for x in (seo.get("secondary_keywords") or []) if str(x).strip()]
+    seo.setdefault("thumbnail_text", d.get("hook_overlay", ""))
+    d["seo"] = seo
     return d
 
 
@@ -493,21 +549,131 @@ def pixabay_video(query: str, min_dur: float, dest: Path) -> bool:
     return False
 
 
-def ai_image(prompt: str, dest: Path, seed: int) -> bool:
+_STOP = {"the", "a", "an", "and", "of", "in", "on", "with", "for", "to", "indian", "food", "recipe", "style"}
+_used_clips = set()
+
+
+def _tokens(text: str) -> set:
+    return {t for t in re.findall(r"[a-z]+", text.lower()) if len(t) > 2 and t not in _STOP}
+
+
+def own_clip(query: str, recipe: dict, dest: Path) -> bool:
+    """Your own footage: assets/clips/<keywords>.mp4 (e.g. 'onion-frying-pan.mp4', 'masala-chai-pour.mp4').
+    Best match by filename keywords vs. the scene query + dish name; never reused in the same video."""
+    if not CLIPS_DIR.exists():
+        return False
+    want = _tokens(query) | _tokens(recipe["name"])
+    best, score = None, 0
+    for f in CLIPS_DIR.rglob("*"):
+        if f.suffix.lower() not in (".mp4", ".mov", ".mkv", ".webm") or f in _used_clips:
+            continue
+        sc = len(want & _tokens(f.stem.replace("-", " ").replace("_", " ")))
+        if sc > score:
+            best, score = f, sc
+    if best:
+        shutil.copy(best, dest)
+        _used_clips.add(best)
+        return True
+    return False
+
+
+def _food_prompt(prompt: str) -> str:
+    return (f"{prompt}, Indian home kitchen, food photography, photorealistic, appetizing, "
+            f"natural window light, shallow depth of field, vertical composition, no text, no watermark")
+
+
+def _valid_image(dest: Path) -> bool:
+    try:
+        with Image.open(dest) as im:
+            im.verify()
+        with Image.open(dest) as im:
+            return min(im.size) >= 512
+    except Exception:
+        return False
+
+
+_last_pollinations = [0.0]
+
+
+def pollinations_image(prompt: str, dest: Path, seed: int) -> bool:
+    """Free, no signup. Anonymous use is throttled (~1 request / 15 s), so calls are spaced out;
+    a free POLLINATIONS_API_KEY (enter.pollinations.ai) removes the throttle."""
     if not USE_AI_IMAGES or DEMO:
         return False
-    full = (f"{prompt}, Indian home kitchen, food photography, photorealistic, appetizing, "
-            f"natural window light, shallow depth of field, vertical composition, no text, no watermark")
-    url = ("https://image.pollinations.ai/prompt/" + urllib.parse.quote(full) +
+    if not POLLINATIONS_API_KEY:
+        wait = 16 - (time.time() - _last_pollinations[0])
+        if wait > 0:
+            time.sleep(wait)
+    url = ("https://image.pollinations.ai/prompt/" + urllib.parse.quote(_food_prompt(prompt)) +
            f"?width=1080&height=1920&nologo=true&seed={seed}&model=flux")
-    r = _http_get(url, timeout=180)
+    headers = {"User-Agent": HTTP_UA}
+    if POLLINATIONS_API_KEY:
+        headers["Authorization"] = f"Bearer {POLLINATIONS_API_KEY}"
+    r = _http_get(url, timeout=180, headers=headers)
+    _last_pollinations[0] = time.time()
     if r and r.status_code == 200 and r.headers.get("content-type", "").startswith("image"):
         dest.write_bytes(r.content)
-        try:
-            Image.open(dest).verify()
-            return True
-        except Exception:
+        return _valid_image(dest)
+    return False
+
+
+def cloudflare_image(prompt: str, dest: Path, seed: int) -> bool:
+    """Cloudflare Workers AI free daily allowance, FLUX.1 schnell. Needs CF_ACCOUNT_ID + CF_API_TOKEN."""
+    if not (CF_ACCOUNT_ID and CF_API_TOKEN) or not USE_AI_IMAGES or DEMO:
+        return False
+    import base64
+    try:
+        r = requests.post(
+            f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell",
+            headers={"Authorization": f"Bearer {CF_API_TOKEN}"},
+            json={"prompt": _food_prompt(prompt), "steps": 8, "seed": seed}, timeout=120)
+        if r.status_code != 200:
+            log(f"  cloudflare HTTP {r.status_code}: {r.text[:120]}")
             return False
+        img = (r.json().get("result") or {}).get("image")
+        if not img:
+            return False
+        dest.write_bytes(base64.b64decode(img))
+        return _valid_image(dest)
+    except Exception as e:
+        log(f"  cloudflare failed: {e}")
+        return False
+
+
+_used_wiki = set()
+
+
+def wikimedia_image(query: str, dest: Path) -> bool:
+    """Real photos from Wikimedia Commons, no key. ONLY public-domain / CC0 files are used,
+    so no attribution or share-alike obligations end up in the video."""
+    if not USE_WIKIMEDIA or DEMO:
+        return False
+    r = _http_get("https://commons.wikimedia.org/w/api.php", headers={"User-Agent": HTTP_UA}, params={
+        "action": "query", "format": "json", "generator": "search", "gsrnamespace": 6, "gsrlimit": 40,
+        "gsrsearch": f"{query} filetype:bitmap", "prop": "imageinfo",
+        "iiprop": "url|size|extmetadata", "iiurlwidth": 1600})
+    if not r or r.status_code != 200:
+        return False
+    pages = (r.json().get("query") or {}).get("pages", {}).values()
+    ok = []
+    for pg in pages:
+        ii = (pg.get("imageinfo") or [{}])[0]
+        meta = ii.get("extmetadata") or {}
+        lic = (meta.get("LicenseShortName", {}).get("value", "") + " " +
+               meta.get("License", {}).get("value", "")).lower()
+        if not ("public domain" in lic or "cc0" in lic or lic.strip() in ("pd", "pd pd")):
+            continue
+        if ii.get("height", 0) < 900 or ii.get("width", 0) < 900 or pg["pageid"] in _used_wiki:
+            continue
+        ok.append((pg, ii))
+    random.shuffle(ok)
+    for pg, ii in ok[:4]:
+        dl = _http_get(ii.get("thumburl") or ii["url"], timeout=120, headers={"User-Agent": HTTP_UA})
+        if dl and dl.status_code == 200:
+            dest.write_bytes(dl.content)
+            if _valid_image(dest):
+                _used_wiki.add(pg["pageid"])
+                return True
     return False
 
 
@@ -552,48 +718,67 @@ def text_card(title: str, sub: str, dest: Path, seed=0):
 
 
 def render_scene(i: int, scene: dict, dur: float, recipe: dict, out: Path) -> str:
-    """Render one silent 1080x1920 clip of exactly `dur` seconds. Returns the source used."""
+    """Render one silent 1080x1920 clip of exactly `dur` seconds. Returns the source used.
+    Sources are tried in VISUAL_ORDER; video sources get trimmed/cropped, image sources get Ken Burns."""
     vdir = WORK / "visuals"
     vdir.mkdir(parents=True, exist_ok=True)
     grade = "eq=saturation=1.12:contrast=1.04,vignette=PI/5"
     common = ["-an", "-r", str(FPS), "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
               "-pix_fmt", "yuv420p", "-t", f"{dur:.3f}"]
+    q0 = scene["pexels_query"]
+    queries = list(dict.fromkeys(q for q in [q0, " ".join(q0.split()[-2:]),
+                                             f"{recipe['name']} indian food", "indian cooking"] if q.strip()))
+    seed = abs(hash(scene["image_prompt"])) % 100000
+    vid, img = vdir / f"s{i:02d}.mp4", vdir / f"s{i:02d}.jpg"
 
-    # (a) real stock footage
-    queries = [scene["pexels_query"], " ".join(scene["pexels_query"].split()[-2:]),
-               f"{recipe['name']} indian food", "indian cooking"]
-    for q in dict.fromkeys(q for q in queries if q.strip()):
-        src = vdir / f"s{i:02d}.mp4"
-        provider = "pexels" if pexels_video(q, dur, src) else ("pixabay" if pixabay_video(q, dur, src) else "")
-        if provider:
-            try:
-                sdur = ffprobe_duration(src)
-                ss = rnd_offset(sdur, dur)
-                speed = 1.0 if sdur >= dur else max(sdur / dur, 0.5)   # slow down short clips a bit
-                vf = (f"setpts=PTS/{speed:.3f},scale={W}:{H}:force_original_aspect_ratio=increase,"
-                      f"crop={W}:{H},fps={FPS},{grade},setsar=1,"
-                      f"tpad=stop_mode=clone:stop_duration={dur:.2f}")
-                run(["ffmpeg", "-y", "-v", "error", "-ss", f"{ss:.2f}", "-i", str(src),
-                     "-vf", vf, *common, str(out)])
-                return f"{provider}:{q}"
-            except Exception as e:
-                log(f"  pexels clip render failed: {e}")
+    def render_video(tag):
+        sdur = ffprobe_duration(vid)
+        ss = rnd_offset(sdur, dur)
+        speed = 1.0 if sdur >= dur else max(sdur / dur, 0.5)   # slow down short clips a bit
+        # punch-in: each cut starts 10 % zoomed and settles in 0.35 s (adds energy, keeps eyes on screen)
+        vf = (f"setpts=PTS/{speed:.3f},scale={W}:{H}:force_original_aspect_ratio=increase,"
+              f"crop={W}:{H},fps={FPS},{grade},"
+              f"scale=w='trunc({W}*(1+0.10*max(0,1-t/0.35))/2)*2':h=-2:eval=frame,crop={W}:{H},setsar=1,"
+              f"tpad=stop_mode=clone:stop_duration={dur:.2f}")
+        run(["ffmpeg", "-y", "-v", "error", "-ss", f"{ss:.2f}", "-i", str(vid), "-vf", vf, *common, str(out)])
+        return tag
 
-    # (b) AI food photo, (c) branded card — both get slow Ken Burns motion
-    img = vdir / f"s{i:02d}.jpg"
-    source = "ai_image"
-    if not ai_image(scene["image_prompt"], img, seed=hash(scene["image_prompt"]) % 100000):
-        text_card(recipe["name"], scene.get("label") or CHANNEL_NAME, img, seed=i)
-        source = "card"
-    frames = max(int(dur * FPS), 1)
-    zin = i % 2 == 0
-    z = f"min(1+0.0009*on,1.15)" if zin else f"max(1.15-0.0009*on,1.0)"
-    vf = (f"scale={int(W * 1.6)}:{int(H * 1.6)}:force_original_aspect_ratio=increase,"
-          f"crop={int(W * 1.6)}:{int(H * 1.6)},"
-          f"zoompan=z='{z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={W}x{H}:fps={FPS},"
-          f"{grade if source != 'card' else 'null'},setsar=1")
-    run(["ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", str(img), "-vf", vf, *common, str(out)])
-    return source
+    def render_image(tag, card=False):
+        frames = max(int(dur * FPS), 1)
+        z = "min(1+0.0009*on,1.15)" if i % 2 == 0 else "max(1.15-0.0009*on,1.0)"
+        vf = (f"scale={int(W * 1.6)}:{int(H * 1.6)}:force_original_aspect_ratio=increase,"
+              f"crop={int(W * 1.6)}:{int(H * 1.6)},"
+              f"zoompan=z='{z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={W}x{H}:fps={FPS},"
+              f"{'null' if card else grade},setsar=1")
+        run(["ffmpeg", "-y", "-v", "error", "-loop", "1", "-i", str(img), "-vf", vf, *common, str(out)])
+        return tag
+
+    for src in VISUAL_ORDER:
+        try:
+            if src == "own":
+                if own_clip(q0, recipe, vid):
+                    return render_video("own")
+            elif src in ("pexels", "pixabay"):
+                fn = pexels_video if src == "pexels" else pixabay_video
+                if (src == "pexels" and not PEXELS_API_KEY) or (src == "pixabay" and not PIXABAY_API_KEY):
+                    continue
+                for q in queries:
+                    if fn(q, dur, vid):
+                        return render_video(f"{src}:{q}")
+            elif src == "pollinations":
+                if pollinations_image(scene["image_prompt"], img, seed):
+                    return render_image("ai_image")
+            elif src == "cloudflare":
+                if cloudflare_image(scene["image_prompt"], img, seed):
+                    return render_image("ai_image")
+            elif src == "wikimedia":
+                for q in (q0, recipe["name"]):
+                    if wikimedia_image(q, img):
+                        return render_image(f"wikimedia:{q}")
+        except Exception as e:
+            log(f"  {src} failed for scene {i + 1}: {str(e)[:200]}")
+    text_card(recipe["name"], scene.get("label") or CHANNEL_NAME, img, seed=i)
+    return render_image("card", card=True)
 
 
 def rnd_offset(src_dur, need):
@@ -604,17 +789,39 @@ def rnd_offset(src_dur, need):
 # ----------------------------------------------------------------------------
 # 5. SOUND (music + SFX, mixed in numpy)
 # ----------------------------------------------------------------------------
-def synth_music(seconds: float, sr=44100, seed=None) -> np.ndarray:
-    """Warm lo-fi loop: soft pad chords + plucked arpeggio + gentle shaker. Royalty-free by construction."""
+_MOOD = {   # bpm, chord roots (Hz), arp/pad level, percussion style
+    "lofi":    (86,  [146.83, 123.47, 98.00, 110.00], "kick"),
+    "chill":   (78,  [130.81, 110.00, 87.31, 98.00],  "soft"),
+    "upbeat":  (112, [146.83, 164.81, 123.47, 110.00], "kick"),
+    "desi":    (100, [146.83, 130.81, 116.54, 130.81], "tabla"),
+    "festive": (120, [146.83, 164.81, 146.83, 110.00], "tabla"),
+}
+
+
+def _tabla(kind, sr, rnd):
+    """Very small physical-ish tabla: 'dha' = bayan boom + dayan ring, 'na'/'tin' = dayan ring only."""
+    ln = int(0.35 * sr)
+    t = np.arange(ln) / sr
+    ring_f = 380 if kind == "na" else 520
+    ring = 0.6 * np.sin(2 * np.pi * ring_f * t) * np.exp(-t * (18 if kind == "na" else 26))
+    ring += 0.15 * rnd.standard_normal(ln) * np.exp(-t * 120)          # finger slap
+    if kind == "dha":
+        bend = 70 + 45 * np.exp(-t * 9)                                   # pitch-bending bayan
+        ring += 0.9 * np.sin(2 * np.pi * np.cumsum(bend) / sr) * np.exp(-t * 6)
+    return ring.astype(np.float32)
+
+
+def synth_music(seconds: float, sr=44100, seed=None, mood="lofi") -> np.ndarray:
+    """Royalty-free-by-construction loop in the scene's mood: pad chords + plucked arpeggio + percussion
+    (soft kick/shaker, or a tabla theka for 'desi'/'festive')."""
     rnd = np.random.default_rng(seed)
-    bpm = 88
+    bpm, roots, perc = _MOOD.get(mood, _MOOD["lofi"])
     beat = 60 / bpm
     n = int(seconds * sr)
     t = np.arange(n) / sr
     out = np.zeros(n, dtype=np.float32)
-    # I - vi - IV - V in D major-ish, one chord per bar (4 beats)
-    roots = [146.83, 123.47, 98.00, 110.00]
     chords = [[1, 1.26, 1.5], [1, 1.19, 1.5], [1, 1.26, 1.5], [1, 1.26, 1.5]]
+    theka = ["dha", "na", "na", "dha", "dha", "na", "tin", "na"]
     bar = 4 * beat
     for b in range(int(seconds / bar) + 1):
         root, ch = roots[b % 4], chords[b % 4]
@@ -625,8 +832,7 @@ def synth_music(seconds: float, sr=44100, seed=None) -> np.ndarray:
         env = np.minimum(tt / 0.6, 1) * np.minimum((bar - tt) / 0.4, 1)
         pad = sum(np.sin(2 * np.pi * root * r * tt) + 0.3 * np.sin(2 * np.pi * root * r * 2 * tt) for r in ch)
         out[s0:s1] += 0.06 * env * pad
-        # arpeggio: 8 eighth notes per bar
-        for k in range(8):
+        for k in range(8):                                   # plucked arpeggio, eighth notes
             a0 = s0 + int(k * beat / 2 * sr)
             if a0 >= n:
                 break
@@ -635,37 +841,66 @@ def synth_music(seconds: float, sr=44100, seed=None) -> np.ndarray:
             f = root * 2 * ch[[0, 1, 2, 1, 0, 2, 1, 2][k]]
             pl = np.sin(2 * np.pi * f * ta) + 0.4 * np.sin(2 * np.pi * 2 * f * ta)
             out[a0:a0 + ln] += 0.05 * np.exp(-ta * 7) * pl
-        # soft kick on 1 and 3, shaker on off-beats
-        for k in range(4):
-            k0 = s0 + int(k * beat * sr)
-            if k0 >= n:
-                break
-            if k % 2 == 0:
-                ln = min(int(0.25 * sr), n - k0)
-                tk = np.arange(ln) / sr
-                out[k0:k0 + ln] += 0.18 * np.exp(-tk * 18) * np.sin(2 * np.pi * (55 + 60 * np.exp(-tk * 30)) * tk)
-            h0 = k0 + int(beat / 2 * sr)
-            if h0 < n:
-                ln = min(int(0.06 * sr), n - h0)
-                out[h0:h0 + ln] += 0.025 * rnd.standard_normal(ln) * np.exp(-np.arange(ln) / sr * 60)
-    # gentle low-pass (moving average) for the lo-fi feel
-    k = np.ones(6) / 6
-    out = np.convolve(out, k, mode="same").astype(np.float32)
+            if perc == "tabla":
+                hit = _tabla(theka[k], sr, rnd)
+                ln2 = min(len(hit), n - a0)
+                out[a0:a0 + ln2] += 0.22 * hit[:ln2]
+        if perc in ("kick", "soft"):
+            for k in range(4):
+                k0 = s0 + int(k * beat * sr)
+                if k0 >= n:
+                    break
+                if k % 2 == 0 or (perc == "kick" and bpm > 100):
+                    ln = min(int(0.25 * sr), n - k0)
+                    tk = np.arange(ln) / sr
+                    amp = 0.18 if perc == "kick" else 0.09
+                    out[k0:k0 + ln] += amp * np.exp(-tk * 18) * np.sin(2 * np.pi * (55 + 60 * np.exp(-tk * 30)) * tk)
+                h0 = k0 + int(beat / 2 * sr)
+                if h0 < n:
+                    ln = min(int(0.06 * sr), n - h0)
+                    out[h0:h0 + ln] += 0.025 * rnd.standard_normal(ln) * np.exp(-np.arange(ln) / sr * 60)
+    out = np.convolve(out, np.ones(6) / 6, mode="same").astype(np.float32)
     return out / (np.abs(out).max() + 1e-6) * 0.8
 
 
-def load_music(seconds: float, sr=44100) -> tuple:
-    files = sorted([p for p in MUSIC_DIR.glob("*") if p.suffix.lower() in (".mp3", ".wav", ".m4a", ".ogg")]) \
-        if MUSIC_DIR.exists() else []
+def _most_energetic(arr: np.ndarray, need: int, sr: int) -> np.ndarray:
+    """Start the track at its liveliest part (the 'drop'), not at a slow intro."""
+    if len(arr) <= need + sr:
+        return arr
+    win = sr // 2
+    rms = np.sqrt(np.convolve(arr ** 2, np.ones(win) / win, mode="valid")[::win])
+    span = max(need // win, 1)
+    if len(rms) <= span:
+        return arr
+    csum = np.concatenate([[0], np.cumsum(rms)])
+    means = (csum[span:] - csum[:-span]) / span
+    skip = int(len(means) * 0.08)                       # never start in the first ~8 %
+    best = skip + int(np.argmax(means[skip:])) if len(means) > skip else 0
+    start = max(best * win - sr // 2, 0)                # half a second of run-up
+    return arr[start:]
+
+
+def load_music(seconds: float, sr=44100, mood="lofi") -> tuple:
+    exts = (".mp3", ".wav", ".m4a", ".ogg")
+    files = []
+    if MUSIC_DIR.exists():
+        for folder in (MUSIC_DIR / mood, MUSIC_DIR):        # mood folder first, then the root folder
+            files = sorted(p for p in folder.glob("*") if p.suffix.lower() in exts) if folder.exists() else []
+            if files:
+                break
+        if not files:
+            files = sorted(p for p in MUSIC_DIR.rglob("*") if p.suffix.lower() in exts)
+    need = int(seconds * sr)
     if files:
         f = random.choice(files)
         arr = _decode_to_array(f, sr)
         if len(arr) > sr:
-            reps = int(math.ceil(seconds * sr / len(arr)))
-            arr = np.tile(arr, reps)[: int(seconds * sr)]
+            arr = _most_energetic(arr, need, sr)
+            reps = int(math.ceil(need / len(arr)))
+            arr = np.tile(arr, reps)[:need]
             arr = arr / (np.abs(arr).max() + 1e-6) * 0.8
-            return arr, f.name
-    return synth_music(seconds, sr), "synth-lofi"
+            return arr, f"{f.parent.name}/{f.name}"
+    return synth_music(seconds, sr, mood=mood), f"synth-{mood}"
 
 
 def sfx(kind: str, seconds: float, sr=44100, seed=0) -> np.ndarray:
@@ -708,13 +943,13 @@ def sfx(kind: str, seconds: float, sr=44100, seed=0) -> np.ndarray:
     return (out / (np.abs(out).max() + 1e-6)).astype(np.float32)
 
 
-def mix_audio(voice: np.ndarray, sr: int, scenes: list, timing: list, dest: Path) -> str:
+def mix_audio(voice: np.ndarray, sr: int, scenes: list, timing: list, dest: Path, mood="lofi") -> str:
     n = len(voice)
-    music, music_name = load_music(n / sr + 1, sr)
+    music, music_name = load_music(n / sr + 1, sr, mood)
     music = music[:n]
     # duck music under the voice (envelope follower)
     env = np.convolve(np.abs(voice), np.ones(int(0.12 * sr)) / int(0.12 * sr), mode="same")
-    duck = np.where(env > 0.01, 0.45, 1.0)
+    duck = np.where(env > 0.01, 0.5, 1.0)
     duck = np.convolve(duck, np.ones(int(0.25 * sr)) / int(0.25 * sr), mode="same")
     mix = voice * 1.0 + music * MUSIC_VOLUME * duck
     fx = np.zeros(n, dtype=np.float32)
@@ -881,7 +1116,7 @@ def build_video(script: dict, recipe: dict, slug: str) -> dict:
 
     log("Sound ...")
     audio = WORK / "mix.m4a"
-    music_name = mix_audio(voice, sr, script["scenes"], timing, audio)
+    music_name = mix_audio(voice, sr, script["scenes"], timing, audio, script.get("music_mood", "lofi"))
 
     log("Captions + final encode ...")
     ass = WORK / "captions.ass"
@@ -891,14 +1126,127 @@ def build_video(script: dict, recipe: dict, slug: str) -> dict:
     final = OUT / f"{slug}.mp4"
     ass_arg = ass.as_posix().replace(":", r"\:")
     fonts_arg = FONT_DIR.as_posix().replace(":", r"\:")
-    run(["ffmpeg", "-y", "-v", "error", "-i", str(silent), "-i", str(audio),
-         "-vf", f"subtitles='{ass_arg}':fontsdir='{fonts_arg}'",
-         "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "19",
+    inputs, graph = sticker_graph(script["scenes"], timing)
+    graph += f"[vs]subtitles='{ass_arg}':fontsdir='{fonts_arg}'[vout]"
+    run(["ffmpeg", "-y", "-v", "error", "-i", str(silent), "-i", str(audio), *inputs,
+         "-filter_complex", graph,
+         "-map", "[vout]", "-map", "1:a", "-c:v", "libx264", "-preset", "medium", "-crf", "19",
          "-pix_fmt", "yuv420p", "-r", str(FPS), "-c:a", "copy", "-shortest",
          "-movflags", "+faststart", str(final)], timeout=1800)
     dur = ffprobe_duration(final)
     log(f"  done: {final.name} ({dur:.1f}s, {final.stat().st_size / 1e6:.1f} MB)")
-    return {"video": final, "srt": srt, "duration": round(dur, 1), "sources": sources, "music": music_name}
+    thumb = OUT / f"{slug}-thumbnail.jpg"
+    try:
+        build_thumbnail(script, recipe, clips, timing, thumb)
+        log(f"  thumbnail: {thumb.name}")
+    except Exception as e:
+        log(f"  thumbnail skipped: {e}")
+        thumb = None
+    return {"video": final, "srt": srt, "duration": round(dur, 1), "sources": sources, "music": music_name,
+            "thumbnail": thumb}
+
+
+def sticker_graph(scenes: list, timing: list) -> tuple:
+    """Animated emoji stickers: pop in with an overshoot, bob gently, alternate sides.
+    Returns (extra ffmpeg inputs, filter_complex prefix ending in [vs])."""
+    total = timing[-1]["start"] + timing[-1]["dur"]
+    inputs, parts, last, idx = [], [], "0:v", 2
+    if USE_STICKERS:
+        for i, (sc, tm) in enumerate(zip(scenes, timing)):
+            png = STICKER_DIR / f"{sc.get('sticker', 'none')}.png"
+            if sc.get("sticker") in (None, "none") or not png.exists():
+                continue
+            a = tm["start"] + 0.3
+            b = tm["start"] + tm["dur"] - 0.15
+            if b - a < 0.6:
+                continue
+            size = 250 if i else 300
+            # first scene: under the hook text; others: alternate top-right / top-left below the step label
+            cx, cy = (540, 1130) if i == 0 else ((850, 520) if i % 2 else (230, 520))
+            inputs += ["-loop", "1", "-t", f"{total:.2f}", "-i", str(png)]
+            k = f"(t-{a:.2f})/0.25"
+            parts.append(
+                # rotate BEFORE the animated scale: rotate locks its output size on the first frame
+                f"[{idx}:v]format=rgba,rotate='0.12*sin(2*PI*0.8*t)':c=none:ow=rotw(0.2):oh=roth(0.2),"
+                f"scale=w='if(lt(t,{a:.2f}),2,trunc({size}*min(1,{k})*(1+0.18*sin(min(1,{k})*PI))/2)*2)'"
+                f":h=-2:eval=frame[s{idx}]")
+            parts.append(
+                f"[{last}][s{idx}]overlay=x='{cx}-w/2':y='{cy}-h/2+14*sin(2*PI*1.1*t)':"
+                f"enable='between(t,{a:.2f},{b:.2f})'[o{idx}]")
+            last = f"o{idx}"
+            idx += 1
+    parts.append(f"[{last}]null[vs]")
+    return inputs, ";".join(parts) + ";"
+
+
+def _best_frame(clips: list, timing: list, dest: Path):
+    """Pick the most colourful / sharp frame among the first scenes (food close-ups win)."""
+    best, best_score = None, -1
+    for i, (c, tm) in enumerate(list(zip(clips, timing))[:4]):
+        for frac in (0.35, 0.7):
+            f = WORK / f"thumbcand{i}_{int(frac * 100)}.jpg"
+            run(["ffmpeg", "-y", "-v", "error", "-ss", f"{tm['dur'] * frac:.2f}", "-i", str(c),
+                 "-frames:v", "1", "-q:v", "2", str(f)])
+            im = Image.open(f).convert("RGB").resize((270, 480))
+            a = np.asarray(im).astype(np.float32)
+            sat = (a.max(axis=2) - a.min(axis=2)).mean()
+            sharp = np.abs(np.diff(a.mean(axis=2), axis=1)).mean()
+            score = sat + 2 * sharp
+            if score > best_score:
+                best, best_score = f, score
+    shutil.copy(best, dest)
+
+
+def build_thumbnail(script: dict, recipe: dict, clips: list, timing: list, dest: Path):
+    """1080x1920 Shorts thumbnail: best food frame + huge 2-4 word text + dish name + brand."""
+    base = WORK / "thumb_base.jpg"
+    _best_frame(clips, timing, base)
+    img = Image.open(base).convert("RGB").resize((W, H))
+    img = Image.fromarray(np.clip(np.asarray(img).astype(np.float32) * 1.06 + 4, 0, 255).astype(np.uint8))
+    ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(ov)
+    for y in range(H):   # dark gradients top + bottom so text always reads
+        a = int(max(0, 150 - y * 0.35)) if y < 450 else int(max(0, (y - 1150) * 0.32))
+        d.line([(0, y), (W, y)], fill=(0, 0, 0, min(a, 190)))
+    img = Image.alpha_composite(img.convert("RGBA"), ov)
+    d = ImageDraw.Draw(img)
+    text = (script["seo"].get("thumbnail_text") or script.get("hook_overlay") or recipe["name"]).strip()
+    if CONTENT_LANG == "en" or re.fullmatch(r"[\x00-\x7F]+", text):
+        text = text.upper()
+    words, lines, cur = text.split(), [], ""
+    size = 150
+    f = _font(size)
+    while True:
+        lines, cur = [], ""
+        for w in words:
+            t = (cur + " " + w).strip()
+            if d.textlength(t, font=f) > W - 140 and cur:
+                lines.append(cur)
+                cur = w
+            else:
+                cur = t
+        lines.append(cur)
+        if len(lines) <= 3 or size <= 90:
+            break
+        size -= 12
+        f = _font(size)
+    y = 1270
+    for i, ln in enumerate(lines[:3]):
+        fill = (255, 214, 0) if i % 2 == 0 else (255, 255, 255)
+        d.text((W / 2, y), ln, font=f, fill=fill, anchor="mm", stroke_width=10, stroke_fill=(0, 0, 0))
+        y += int(size * 1.08)
+    name_f = _font(70)
+    pill = recipe["name"]
+    tw = d.textlength(pill, font=name_f)
+    d.rounded_rectangle((W / 2 - tw / 2 - 40, 180, W / 2 + tw / 2 + 40, 300), 60, fill=SAFFRON)
+    d.text((W / 2, 240), pill, font=name_f, fill=(40, 12, 6), anchor="mm")
+    d.text((W / 2, H - 120), CHANNEL_NAME, font=_font(46, False), fill=CREAM, anchor="mm",
+           stroke_width=3, stroke_fill=(0, 0, 0))
+    img.convert("RGB").save(dest, "JPEG", quality=88, optimize=True)
+    q = 88
+    while dest.stat().st_size > 1_900_000 and q > 50:      # API limit is 2 MB
+        q -= 8
+        img.convert("RGB").save(dest, "JPEG", quality=q, optimize=True)
 
 
 # ----------------------------------------------------------------------------
@@ -936,39 +1284,116 @@ def compute_publish_at():
     return slot.astimezone(ZoneInfo("UTC")).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
-def build_metadata(script: dict, recipe: dict, sources: list) -> tuple:
-    title = re.sub(r"\s+", " ", script["title"]).strip().replace("<", "").replace(">", "")
-    title = (title[:88] + " #shorts") if "#shorts" not in title.lower() else title[:100]
-    tags_h = [h if h.startswith("#") else "#" + h for h in script["hashtags"]]
-    if "#shorts" not in [h.lower() for h in tags_h]:
-        tags_h.insert(0, "#shorts")
-    desc = [script.get("description", "").strip(), "",
-            "🛒 INGREDIENTS"] + [f"• {x}" for x in script["ingredients"]] + ["",
-            "👩‍🍳 METHOD"] + [f"{i}. {x}" for i, x in enumerate(script["steps"], 1)] + ["",
-            f"🔔 Subscribe to {CHANNEL_NAME} for a new Indian recipe every day!", "Good food = Good mood! 😋", ""]
-    stock = sorted({s.split(":")[0].capitalize() for s in sources if s.startswith(("pexels", "pixabay"))})
+def _clean(t: str) -> str:
+    return re.sub(r"\s+", " ", (t or "").replace("<", "").replace(">", "")).strip()
+
+
+def _fit_title(t: str, limit=100) -> str:
+    t = _clean(t)
+    suffix = " #shorts"
+    if "#shorts" in t.lower():
+        return t[:limit]
+    return (t[: limit - len(suffix)].rstrip(" |-") + suffix)
+
+
+def build_metadata(script: dict, recipe: dict, sources: list, playlist_url: str = "") -> dict:
+    """Full SEO: keyword-first title, keyword-rich first 2 lines, full recipe, related searches,
+    <=15 hashtags (YouTube ignores ALL hashtags if there are more), <=500 chars of tags,
+    and a Hindi title/description localization."""
+    seo = script["seo"]
+    kw = _clean(seo.get("primary_keyword") or f"{recipe['name']} recipe")
+    title_en = _clean(seo.get("title_en") or script["title"])
+    if kw and kw.lower() not in title_en.lower():           # search keyword must be in the title
+        title_en = f"{kw.title()} | {title_en}"
+    title = _fit_title(title_en)
+    title_hi = _fit_title(seo["title_hi"]) if seo.get("title_hi") else ""
+
+    tags_h = []
+    for h in ["#shorts", "#" + re.sub(r"[^a-z0-9]", "", recipe["name"].lower()), "#indianfood"] + script["hashtags"]:
+        h = "#" + re.sub(r"[^\w]", "", h.lstrip("#"), flags=re.U)
+        if len(h) > 2 and h.lower() not in [x.lower() for x in tags_h]:
+            tags_h.append(h)
+    tags_h = tags_h[:12]
+
+    names = {"pexels": "Pexels", "pixabay": "Pixabay", "wikimedia": "Wikimedia Commons (public domain)"}
+    stock = sorted({names[s.split(":")[0]] for s in sources if s.split(":")[0] in names})
+    related = [k for k in seo["secondary_keywords"] if k.lower() != kw.lower()][:10]
+
+    d = [_clean(seo.get("description_hook")) or _clean(script.get("description")),
+         f"Full {kw} below 👇 Save this Short and try it today!", ""]
+    if seo.get("description_hi"):
+        d += [_clean(seo["description_hi"]), ""]
+    d += ["🛒 INGREDIENTS"] + [f"• {x}" for x in script["ingredients"]] + [""]
+    d += ["👩‍🍳 METHOD"] + [f"{i}. {x}" for i, x in enumerate(script["steps"], 1)] + [""]
+    if related:
+        d += ["🔎 You searched for: " + " | ".join([kw] + related), ""]
+    if playlist_url:
+        d += [f"▶️ More {CATEGORY_PLAYLISTS.get(recipe.get('category'), 'recipes')}: {playlist_url}"]
+    d += [f"🔔 Subscribe to {CHANNEL_NAME} for a new Indian recipe every day!", "Good food = Good mood! 😋", ""]
     if stock:
-        desc.append("Video clips: " + " & ".join(stock) + ".")
+        d.append("Stock visuals: " + ", ".join(stock) + ".")
     if "ai_image" in sources:
-        desc.append("Some food visuals are AI-generated.")
-    desc += ["", " ".join(tags_h[:10])]
-    description = "\n".join(desc)[:4900].replace("<", "").replace(">", "")
+        d.append("Some food visuals are AI-generated.")
+    d += ["", " ".join(tags_h)]
+    description = "\n".join(d).replace("<", "").replace(">", "")[:4900]
+
     tags, total = [], 0
-    for t in script["tags"] + [recipe["name"], f"{recipe['name']} recipe", "indian recipe", "shorts"]:
-        t = t.replace("#", "").replace("<", "").replace(">", "").strip()[:60]
+    pool = ([kw, recipe["name"], f"{recipe['name']} recipe", f"{recipe['name']} recipe in hindi"] + related +
+            script["tags"] + [f"how to make {recipe['name'].lower()}", "indian recipe", "indian food",
+                              "recipe in hindi", "shorts", CHANNEL_NAME])
+    for t in pool:
+        t = _clean(t.replace("#", ""))[:60]
         cost = len(t) + (2 if " " in t else 0) + 1
         if t and t.lower() not in [x.lower() for x in tags] and total + cost <= 480:
             tags.append(t)
             total += cost
-    return title, description, tags
+
+    localizations = {}
+    if title_hi:
+        localizations["hi"] = {"title": title_hi,
+                               "description": (_clean(seo.get("description_hi")) + "\n\n" + description)[:4900]}
+    return {"title": title, "description": description, "tags": tags, "localizations": localizations,
+            "primary_keyword": kw}
 
 
-def upload(yt, video: Path, title, desc, tags, synthetic: bool) -> str:
+def ensure_playlist(yt, recipe: dict) -> str:
+    """Find (or create) the public playlist for this recipe's category. Returns playlist id."""
+    if PLAYLIST_ID:
+        return PLAYLIST_ID
+    if not AUTO_PLAYLISTS:
+        return ""
+    name = CATEGORY_PLAYLISTS.get(recipe.get("category", ""), "Indian Recipes")
+    try:
+        token = None
+        while True:
+            r = yt.playlists().list(part="snippet", mine=True, maxResults=50, pageToken=token).execute()
+            for it in r.get("items", []):
+                if it["snippet"]["title"].strip().lower() == name.lower():
+                    return it["id"]
+            token = r.get("nextPageToken")
+            if not token:
+                break
+        pl = yt.playlists().insert(part="snippet,status", body={
+            "snippet": {"title": name, "defaultLanguage": "en",
+                        "description": f"{name} by {CHANNEL_NAME} - quick, easy Indian recipes as Shorts. "
+                                       f"New recipe every day!"},
+            "status": {"privacyStatus": "public"}}).execute()
+        log(f"  created playlist: {name}")
+        return pl["id"]
+    except Exception as e:
+        log(f"  playlist lookup skipped: {e}")
+        return ""
+
+
+def upload(yt, video: Path, meta: dict, synthetic: bool) -> str:
     from googleapiclient.http import MediaFileUpload
     publish_at = compute_publish_at()
     body = {
-        "snippet": {"title": title, "description": desc, "tags": tags, "categoryId": YOUTUBE_CATEGORY_ID,
-                    "defaultLanguage": CONTENT_LANG, "defaultAudioLanguage": CONTENT_LANG},
+        # Title/description are written in English/Hinglish (what people type in search) -> defaultLanguage en;
+        # the spoken audio is CONTENT_LANG; the Hindi title/description go in as a localization.
+        "snippet": {"title": meta["title"], "description": meta["description"], "tags": meta["tags"],
+                    "categoryId": YOUTUBE_CATEGORY_ID, "defaultLanguage": "en",
+                    "defaultAudioLanguage": CONTENT_LANG},
         "status": {"privacyStatus": "public", "selfDeclaredMadeForKids": False,
                    "containsSyntheticMedia": synthetic, "embeddable": True},
     }
@@ -976,7 +1401,11 @@ def upload(yt, video: Path, title, desc, tags, synthetic: bool) -> str:
         body["status"]["privacyStatus"] = "private"
         body["status"]["publishAt"] = publish_at
         log(f"Scheduled public at {publish_at} (UTC)")
-    req = yt.videos().insert(part="snippet,status", body=body,
+    parts = "snippet,status"
+    if meta.get("localizations"):
+        body["localizations"] = meta["localizations"]
+        parts += ",localizations"
+    req = yt.videos().insert(part=parts, body=body,
                              media_body=MediaFileUpload(str(video), chunksize=8 * 1024 * 1024, resumable=True))
     resp, tries = None, 0
     while resp is None:
@@ -1005,15 +1434,61 @@ def upload_captions(yt, vid, srt: Path):
         log(f"  captions upload skipped: {e}")
 
 
-def add_to_playlist(yt, vid):
-    if not PLAYLIST_ID:
+def add_to_playlist(yt, vid, playlist_id):
+    if not playlist_id:
         return
     try:
         yt.playlistItems().insert(part="snippet", body={"snippet": {
-            "playlistId": PLAYLIST_ID, "resourceId": {"kind": "youtube#video", "videoId": vid}}}).execute()
+            "playlistId": playlist_id, "resourceId": {"kind": "youtube#video", "videoId": vid}}}).execute()
         log("  added to playlist")
     except Exception as e:
         log(f"  playlist skipped: {e}")
+
+
+def set_thumbnail(yt, vid, thumb):
+    """Shorts accept API thumbnails only after YouTube has processed the video -> wait for it first.
+    Needs a phone-verified channel (youtube.com/verify)."""
+    if not (SET_THUMBNAIL and thumb and Path(thumb).exists()):
+        return
+    from googleapiclient.http import MediaFileUpload
+    for _ in range(24):                                     # up to ~8 min
+        try:
+            it = yt.videos().list(part="processingDetails", id=vid).execute().get("items", [])
+            st = it[0]["processingDetails"].get("processingStatus") if it else ""
+            if st in ("succeeded", "terminated", "failed"):
+                break
+        except Exception:
+            pass
+        time.sleep(20)
+    for attempt in (1, 2, 3):
+        try:
+            yt.thumbnails().set(videoId=vid, media_body=MediaFileUpload(str(thumb), mimetype="image/jpeg")).execute()
+            log("  thumbnail set")
+            return
+        except Exception as e:
+            msg = str(e)
+            if "403" in msg[:30] or "forbidden" in msg.lower():
+                log("  thumbnail not allowed - verify the channel by phone at https://www.youtube.com/verify "
+                    "(custom thumbnails need it). Video is fine.")
+                return
+            log(f"  thumbnail retry {attempt}: {msg[:150]}")
+            time.sleep(30)
+
+
+def post_first_comment(yt, vid, script, recipe):
+    """First comment with the recipe summary + an engagement question (comments help Shorts reach).
+    The API cannot pin it - pin it once in YouTube Studio if you like."""
+    if not POST_FIRST_COMMENT:
+        return
+    ing = ", ".join(script["ingredients"][:8])
+    text = (f"📌 {recipe['name']} ingredients: {ing}\n\n"
+            f"Aapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋")
+    try:
+        yt.commentThreads().insert(part="snippet", body={"snippet": {
+            "videoId": vid, "topLevelComment": {"snippet": {"textOriginal": text[:9000]}}}}).execute()
+        log("  first comment posted")
+    except Exception as e:
+        log(f"  first comment skipped: {str(e)[:150]}")
 
 
 # ----------------------------------------------------------------------------
@@ -1038,12 +1513,19 @@ def main():
     (OUT / f"{slug}.json").write_text(json.dumps(script, indent=2, ensure_ascii=False), encoding="utf-8")
 
     res = build_video(script, recipe, slug)
-    title, desc, tags = build_metadata(script, recipe, res["sources"])
-    (OUT / f"{slug}-description.txt").write_text(f"{title}\n\n{desc}\n\nTAGS: {', '.join(tags)}", encoding="utf-8")
+    playlist_id = ensure_playlist(yt, recipe) if yt else ""
+    pl_url = f"https://www.youtube.com/playlist?list={playlist_id}" if playlist_id else ""
+    meta = build_metadata(script, recipe, res["sources"], pl_url)
+    title = meta["title"]
+    (OUT / f"{slug}-seo.txt").write_text(
+        f"TITLE: {title}\nHINDI TITLE: {meta['localizations'].get('hi', {}).get('title', '-')}\n"
+        f"PRIMARY KEYWORD: {meta['primary_keyword']}\n\n{meta['description']}\n\n"
+        f"TAGS ({sum(len(t) for t in meta['tags'])} chars): {', '.join(meta['tags'])}", encoding="utf-8")
 
     entry = {"date": datetime.now(IST).date().isoformat(), "recipe": recipe["name"], "title": title,
              "duration": res["duration"], "visuals": res["sources"], "music": res["music"],
              "voice": TTS_VOICE, "lang": CONTENT_LANG, "model": script.get("_model"),
+             "music_mood": script.get("music_mood"), "primary_keyword": meta["primary_keyword"],
              "test_mode": TEST_MODE, "bot_version": VERSION}
     if TEST_MODE:
         log("TEST MODE: not uploading. Files are in output/.")
@@ -1052,10 +1534,12 @@ def main():
         return
 
     synthetic = "ai_image" in res["sources"]
-    vid = upload(yt, res["video"], title, desc, tags, synthetic)
+    vid = upload(yt, res["video"], meta, synthetic)
     log(f"Uploaded: https://youtube.com/shorts/{vid}")
     upload_captions(yt, vid, res["srt"])
-    add_to_playlist(yt, vid)
+    add_to_playlist(yt, vid, playlist_id)
+    set_thumbnail(yt, vid, res.get("thumbnail"))
+    post_first_comment(yt, vid, script, recipe)
     entry["video_id"] = vid
     save_log_entry(entry)
 
@@ -1064,23 +1548,23 @@ DEMO_SCRIPT = {
     "title": "Street Style Masala Chai in 5 Minutes",
     "hook_overlay": "Tapri wali chai ka secret",
     "scenes": [
-        {"say": "Tapri jaisi kadak masala chai ka asli secret aaj bata rahi hoon.", "label": "", "sfx": "none",
+        {"say": "Tapri jaisi kadak masala chai ka asli secret aaj bata rahi hoon.", "label": "", "sticker": "drool", "sfx": "none",
          "pexels_query": "masala chai cup", "image_prompt": "masala chai in glass"},
         {"say": "Ek pan mein dedh cup paani daalo aur medium flame par garam karo.", "label": "Step 1: Paani",
-         "sfx": "pour", "pexels_query": "pouring water pan", "image_prompt": "water in steel pan"},
+         "sticker": "tea", "sfx": "pour", "pexels_query": "pouring water pan", "image_prompt": "water in steel pan"},
         {"say": "Adrak ko kootkar daalo, saath mein do elaichi aur ek chhota tukda dalchini.",
-         "label": "Step 2: Masala", "sfx": "chop", "pexels_query": "crushing ginger mortar",
+         "label": "Step 2: Masala", "sticker": "chef", "sfx": "chop", "pexels_query": "crushing ginger mortar",
          "image_prompt": "crushed ginger cardamom"},
         {"say": "Do chammach chai patti daalo aur do minute tak achhe se ubaalo.", "label": "Step 3: Patti",
-         "sfx": "sizzle", "pexels_query": "boiling tea pot", "image_prompt": "boiling tea leaves"},
+         "sticker": "fire", "sfx": "sizzle", "pexels_query": "boiling tea pot", "image_prompt": "boiling tea leaves"},
         {"say": "Pro tip: doodh daalne se pehle chai ko gehra rang lene do, tabhi kadak banegi.",
-         "label": "Pro Tip", "sfx": "none", "pexels_query": "dark tea boiling",
+         "label": "Pro Tip", "sticker": "sparkles", "sfx": "none", "pexels_query": "dark tea boiling",
          "image_prompt": "dark tea decoction"},
         {"say": "Ab ek cup doodh aur swaad anusaar cheeni daalo, teen baar ubaal aane do.",
-         "label": "Step 4: Doodh", "sfx": "pour", "pexels_query": "pouring milk tea",
+         "label": "Step 4: Doodh", "sticker": "heart_eyes", "sfx": "pour", "pexels_query": "pouring milk tea",
          "image_prompt": "milk pouring into tea"},
         {"say": "Chhaan kar garam garam parle-g ke saath serve karo. Roz nayi recipe ke liye follow karo!",
-         "label": "Serve hot", "sfx": "none", "pexels_query": "tea biscuits",
+         "label": "Serve hot", "sticker": "bell", "sfx": "none", "pexels_query": "tea biscuits",
          "image_prompt": "chai with biscuits"},
     ],
     "ingredients": ["1.5 cup water", "1 cup milk", "2 tsp tea leaves", "1 inch ginger", "2 cardamom",
@@ -1090,6 +1574,15 @@ DEMO_SCRIPT = {
     "description": "Kadak tapri style masala chai at home in 5 minutes.",
     "tags": ["masala chai", "chai recipe", "tapri chai", "indian tea"],
     "hashtags": ["#shorts", "#masalachai", "#indianfood", "#chai"],
+    "music_mood": "desi",
+    "seo": {"primary_keyword": "masala chai recipe",
+            "title_en": "Masala Chai Recipe | Tapri Style Kadak Chai in 5 Min",
+            "title_hi": "मसाला चाय रेसिपी | टपरी जैसी कड़क चाय 5 मिनट में",
+            "description_hook": "Easy masala chai recipe at home - tapri style kadak adrak wali chai in just 5 minutes.",
+            "description_hi": "घर पर टपरी जैसी कड़क मसाला चाय बनाने का आसान तरीका।",
+            "secondary_keywords": ["chai kaise banaye", "adrak wali chai", "tapri chai", "indian tea recipe",
+                                   "kadak chai", "masala tea"],
+            "thumbnail_text": "टपरी वाली कड़क चाय"},
 }
 
 if __name__ == "__main__":
