@@ -1,0 +1,156 @@
+name: Daily Cooking Short (GoodFoodGoodMood)
+
+on:
+  schedule:
+    # GitHub cron is UTC and often fires hours late, so the job runs EARLY and the
+    # bot uploads as PRIVATE with publishAt -> YouTube flips it PUBLIC at exactly
+    # PUBLISH_AT_IST_HOUR (7 PM IST) regardless of when the job really ran.
+    - cron: "23 4 * * *"     # ~09:53 IST  main run
+    - cron: "13 8 * * *"     # ~13:43 IST  backup (skipped if today's Short already uploaded)
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "true = build the Short but do NOT upload (download it from the run's Artifacts)"
+        required: false
+        default: "false"
+        type: string
+      recipe:
+        description: "Optional dish name (e.g. 'Pav Bhaji'). Blank = next recipe from recipes.yaml"
+        required: false
+        default: ""
+        type: string
+      lang:
+        description: "hi = Hindi voice + captions, en = Indian English"
+        required: false
+        default: "hi"
+        type: string
+
+concurrency:
+  group: cooking-daily-short
+  cancel-in-progress: false
+
+jobs:
+  short:
+    name: Create and upload today's Short
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      TZ: Asia/Kolkata
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # Static FFmpeg build (has libass for burned-in captions). Avoids apt mirror outages.
+      - name: Install FFmpeg
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 --retry-delay 5 \
+            "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" \
+            -o ffmpeg.tar.xz
+          tar -xf ffmpeg.tar.xz
+          D="$(find . -maxdepth 1 -type d -name 'ffmpeg-*' | head -1)"
+          sudo cp "$D/bin/ffmpeg" "$D/bin/ffprobe" /usr/local/bin/
+          rm -rf ffmpeg.tar.xz "$D"
+          ffmpeg -version | head -1
+          ffmpeg -hide_banner -filters | grep -q " subtitles " && echo "libass OK"
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Check if today's Short is already uploaded
+        id: check
+        shell: bash
+        env:
+          TEST_MODE: ${{ inputs.test_mode }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          today = datetime.now(ZoneInfo("Asia/Kolkata")).date().isoformat()
+          skip = False
+          if os.environ.get("TEST_MODE", "").lower() != "true" and os.path.exists("upload_log.json"):
+              logs = json.load(open("upload_log.json", encoding="utf-8"))
+              skip = any(e.get("date") == today and not e.get("test_mode") and e.get("video_id") for e in logs)
+          print(f"IST date {today}: {'already uploaded -> skip' if skip else 'proceed'}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"skip={'true' if skip else 'false'}\n")
+          PY
+
+      - name: Write Google credentials
+        if: steps.check.outputs.skip != 'true' && inputs.test_mode != 'true'
+        shell: bash
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          raw = os.environ.get("GOOGLE_CREDENTIALS", "").strip()
+          if not raw:
+              sys.exit("ERROR: GOOGLE_CREDENTIALS secret is empty (run reauth_youtube.py on your PC).")
+          data = json.loads(raw)
+          missing = [k for k in ("refresh_token", "client_id", "client_secret", "token_uri") if not data.get(k)]
+          if missing:
+              sys.exit(f"ERROR: GOOGLE_CREDENTIALS is missing {missing}")
+          json.dump(data, open("token.json", "w"))
+          print("token.json written")
+          PY
+
+      - name: Build (and upload) the Short
+        if: steps.check.outputs.skip != 'true'
+        shell: bash
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PLAYLIST_ID: ${{ secrets.COOKING_PLAYLIST_ID }}
+          TEST_MODE: ${{ inputs.test_mode }}
+          RECIPE_OVERRIDE: ${{ inputs.recipe }}
+          CONTENT_LANG: ${{ inputs.lang || 'hi' }}
+          EXPECTED_CHANNEL_HANDLE: "goodfoodgoodmoodrecipies"
+          PUBLISH_AT_IST_HOUR: "19"
+          USE_AI_IMAGES: "true"
+          MAX_SECONDS: "58"
+          TTS_RATE: "+8%"
+          GEMINI_MODELS: "gemini-flash-latest,gemini-flash-lite-latest,gemini-pro-latest"
+        run: python cooking_shorts_bot.py
+
+      - name: Save video as run artifact
+        if: always() && steps.check.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: short-${{ github.run_number }}
+          path: output/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Commit upload log
+        if: steps.check.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add upload_log.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Nothing to commit"; exit 0; fi
+          git commit -m "log: Short for $(TZ=Asia/Kolkata date +%F) [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase origin "${{ github.ref_name }}" && git push origin "HEAD:${{ github.ref_name }}" && exit 0
+            sleep $((i * 5))
+          done
+          echo "::error::Could not push upload_log.json" && exit 1
+
+      - name: Remove credentials
+        if: always()
+        run: rm -f token.json
