@@ -64,6 +64,14 @@ jobs:
           ffmpeg -version | head -1
           ffmpeg -hide_banner -filters | grep -q " subtitles " && echo "libass OK"
 
+      # Pixabay API terms: search responses must be cached for 24 h.
+      - name: Restore Pixabay search cache
+        uses: actions/cache@v4
+        with:
+          path: cache/pixabay
+          key: pixabay-${{ github.run_id }}
+          restore-keys: pixabay-
+
       - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
@@ -124,7 +132,8 @@ jobs:
           USE_AI_IMAGES: "true"
           MAX_SECONDS: "58"
           TTS_RATE: "+8%"
-          GEMINI_MODELS: "gemini-flash-latest,gemini-flash-lite-latest,gemini-pro-latest"
+          GEMINI_MODELS: "gemini-flash-latest,gemini-flash-lite-latest"   # + every other flash model the key can use (auto)
+          GEMINI_MAX_WAIT_MIN: "20"
         run: python cooking_shorts_bot.py
 
       - name: Save video as run artifact
