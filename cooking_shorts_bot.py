@@ -50,7 +50,7 @@ import requests
 import yaml
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-VERSION = "1.5.1"
+VERSION = "1.6.0"
 
 # ----------------------------------------------------------------------------
 # CONFIG (all overridable from the workflow env)
@@ -93,7 +93,7 @@ USE_WIKIMEDIA = os.getenv("USE_WIKIMEDIA", "true").lower() == "true"
 CLIPS_DIR = ROOT / "assets" / "clips"
 # Order of visual sources per scene (first one that delivers wins).
 VISUAL_ORDER = [x.strip() for x in os.getenv(
-    "VISUAL_ORDER", "own,pexels,pixabay,pollinations,cloudflare,wikimedia").split(",") if x.strip()]
+    "VISUAL_ORDER", "own,pexels,pixabay,pixabay_img,pollinations,cloudflare,wikimedia").split(",") if x.strip()]
 HTTP_UA = "GoodFoodShortsBot/1.3 (https://www.youtube.com/@GoodFoodGoodMoodRecipies; automated recipe shorts)"
 USE_AI_IMAGES = os.getenv("USE_AI_IMAGES", "true").lower() == "true"
 MUSIC_VOLUME = float(os.getenv("MUSIC_VOLUME", "0.16"))
@@ -494,20 +494,26 @@ _used_pixabay = set()
 PIXABAY_CACHE = ROOT / "cache" / "pixabay"
 
 
-def _pixabay_search(query: str):
+def _pixabay_search(query: str, kind: str = "videos"):
     """Pixabay API rule: search responses must be cached for 24 h. Cached on disk
-    (persisted between runs by actions/cache in the workflow)."""
+    (persisted between runs by actions/cache in the workflow). kind = 'videos' or 'images'."""
     import hashlib
     PIXABAY_CACHE.mkdir(parents=True, exist_ok=True)
-    f = PIXABAY_CACHE / (hashlib.sha1(query.lower().strip().encode()).hexdigest() + ".json")
+    f = PIXABAY_CACHE / (hashlib.sha1(f"{kind}:{query.lower().strip()}".encode()).hexdigest() + ".json")
     if f.exists() and time.time() - f.stat().st_mtime < 24 * 3600:
         try:
             return json.loads(f.read_text(encoding="utf-8"))
         except Exception:
             pass
-    r = _http_get("https://pixabay.com/api/videos/",
-                  params={"key": PIXABAY_API_KEY, "q": query[:100], "safesearch": "true",
-                          "video_type": "film", "per_page": 30, "order": "popular"})
+    if kind == "images":
+        url, params = "https://pixabay.com/api/", {
+            "key": PIXABAY_API_KEY, "q": query[:100], "safesearch": "true", "image_type": "photo",
+            "category": "food", "min_width": 1000, "min_height": 1000, "per_page": 40, "order": "popular"}
+    else:
+        url, params = "https://pixabay.com/api/videos/", {
+            "key": PIXABAY_API_KEY, "q": query[:100], "safesearch": "true",
+            "video_type": "film", "per_page": 30, "order": "popular"}
+    r = _http_get(url, params=params)
     if not r or r.status_code != 200:
         if r is not None:
             log(f"  pixabay HTTP {r.status_code}: {r.text[:120]}")
@@ -593,6 +599,28 @@ def _valid_image(dest: Path) -> bool:
             return min(im.size) >= 512
     except Exception:
         return False
+
+
+_used_pixabay_img = set()
+
+
+def pixabay_image(query: str, dest: Path) -> bool:
+    """Real food PHOTO from Pixabay (same free key). Portrait photos first; gets Ken Burns motion."""
+    if not PIXABAY_API_KEY or DEMO:
+        return False
+    data = _pixabay_search(query, "images")
+    if not data:
+        return False
+    hits = [h for h in data.get("hits", []) if h["id"] not in _used_pixabay_img and h.get("largeImageURL")]
+    hits.sort(key=lambda h: (h.get("imageHeight", 0) < h.get("imageWidth", 0), -h.get("likes", 0)))
+    for h in hits[:5]:
+        dl = _http_get(h["largeImageURL"], timeout=120)
+        if dl and dl.status_code == 200:
+            dest.write_bytes(dl.content)
+            if _valid_image(dest):
+                _used_pixabay_img.add(h["id"])
+                return True
+    return False
 
 
 _last_pollinations = [0.0]
@@ -768,6 +796,12 @@ def render_scene(i: int, scene: dict, dur: float, recipe: dict, out: Path) -> st
                 for q in queries:
                     if fn(q, dur, vid):
                         return render_video(f"{src}:{q}")
+            elif src == "pixabay_img":
+                if not PIXABAY_API_KEY:
+                    continue
+                for q in queries:
+                    if pixabay_image(q, img):
+                        return render_image(f"pixabay_img:{q}")
             elif src == "pollinations":
                 if pollinations_image(scene["image_prompt"], img, seed):
                     return render_image("ai_image")
@@ -1336,7 +1370,8 @@ def build_metadata(script: dict, recipe: dict, sources: list, playlist_url: str 
             tags_h.append(h)
     tags_h = tags_h[:12]
 
-    names = {"pexels": "Pexels", "pixabay": "Pixabay", "wikimedia": "Wikimedia Commons (public domain)"}
+    names = {"pexels": "Pexels", "pixabay": "Pixabay", "pixabay_img": "Pixabay",
+             "wikimedia": "Wikimedia Commons (public domain)"}
     stock = sorted({names[s.split(":")[0]] for s in sources if s.split(":")[0] in names})
     related = [k for k in seo["secondary_keywords"] if k.lower() != kw.lower()][:10]
 
