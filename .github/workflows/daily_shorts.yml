@@ -131,7 +131,7 @@ jobs:
           SET_THUMBNAIL: "true"       # custom Shorts thumbnail (channel must be phone-verified)
           AUTO_PLAYLISTS: "true"      # one public playlist per recipe category (SEO)
           POST_FIRST_COMMENT: "true"  # recipe + question comment (pin it in Studio if you like)
-          VISUAL_ORDER: "own,pexels,pixabay,pollinations,cloudflare,wikimedia"
+          VISUAL_ORDER: "own,pexels,pixabay,pixabay_img,pollinations,cloudflare,wikimedia"
           PLAYLIST_ID: ${{ secrets.COOKING_PLAYLIST_ID }}
           TEST_MODE: ${{ inputs.test_mode }}
           RECIPE_OVERRIDE: ${{ inputs.recipe }}
