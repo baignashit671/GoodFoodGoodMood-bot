@@ -78,7 +78,8 @@ Actions → **Daily Cooking Short** → Run workflow → `test_mode = true` → 
 ```
 cooking_shorts_bot.py          the bot
 recipes.yaml                   recipe queue
-upload_log.json                what was uploaded (committed by the workflow)
+upload_log.json                what was uploaded - created & committed by the workflow. NEVER overwrite it
+                               when you upload new bot files (zips don't contain it on purpose)
 reauth_youtube.py              one-time YouTube token (run on your PC)
 assets/fonts/Hind-*.ttf        Devanagari + Latin caption font (SIL OFL)
 assets/music/                  optional background tracks
