@@ -1,10 +1,19 @@
 # Background music (optional)
 
-Drop royalty-free tracks here (`.mp3`, `.wav`, `.m4a`, `.ogg`). Each run picks one at random,
-loops/trims it to the video length and ducks it under the voice.
+Gemini picks a mood for every recipe: `upbeat`, `desi`, `lofi`, `festive`, `chill`.
+Put royalty-free tracks in matching sub-folders (any of them can be empty):
 
-Safe sources: YouTube Studio → Audio Library (filter "Attribution not required"),
-Pixabay Music. Upbeat / lo-fi / Indian acoustic tracks suit cooking Shorts best.
+    assets/music/desi/      tabla, sitar, Indian acoustic
+    assets/music/upbeat/    happy pop / funk
+    assets/music/lofi/      chill lo-fi beats
+    assets/music/festive/   dhol, bhangra, celebration
+    assets/music/chill/     soft acoustic
 
-If this folder has no audio files, the bot uses its built-in synthesized lo-fi loop
-(royalty-free by construction), so the workflow never fails because of music.
+The bot picks a track from the mood folder (else from this folder, else any sub-folder), starts it at its
+most energetic part (skipping slow intros), loops/trims it and ducks it under the voice.
+
+Safe sources: YouTube Studio -> Audio Library (filter "Attribution not required"), Pixabay Music.
+Do NOT add downloaded film/trending songs: music added outside YouTube's Shorts editor gets standard
+Content ID claims (revenue to the label, or the Short gets blocked).
+
+No files at all? The bot uses its built-in synthesized loops (tabla theka for desi/festive, lo-fi for the rest).
