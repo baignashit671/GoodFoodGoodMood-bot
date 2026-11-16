@@ -113,7 +113,8 @@ jobs:
         shell: bash
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}     # optional - Pexels paused new keys
           PLAYLIST_ID: ${{ secrets.COOKING_PLAYLIST_ID }}
           TEST_MODE: ${{ inputs.test_mode }}
           RECIPE_OVERRIDE: ${{ inputs.recipe }}
