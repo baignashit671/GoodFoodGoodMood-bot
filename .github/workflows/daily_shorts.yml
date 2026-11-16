@@ -33,7 +33,7 @@ jobs:
   short:
     name: Create and upload today's Short
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     permissions:
       contents: write
     env:
@@ -123,6 +123,15 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}     # optional - Pexels paused new keys
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}   # optional - faster AI images
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}                 # optional - Cloudflare Workers AI
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          USE_WIKIMEDIA: "true"
+          USE_STICKERS: "true"        # animated emoji stickers
+          SET_THUMBNAIL: "true"       # custom Shorts thumbnail (channel must be phone-verified)
+          AUTO_PLAYLISTS: "true"      # one public playlist per recipe category (SEO)
+          POST_FIRST_COMMENT: "true"  # recipe + question comment (pin it in Studio if you like)
+          VISUAL_ORDER: "own,pexels,pixabay,pollinations,cloudflare,wikimedia"
           PLAYLIST_ID: ${{ secrets.COOKING_PLAYLIST_ID }}
           TEST_MODE: ${{ inputs.test_mode }}
           RECIPE_OVERRIDE: ${{ inputs.recipe }}
@@ -134,7 +143,9 @@ jobs:
           TTS_RATE: "+8%"
           GEMINI_MODELS: "gemini-flash-latest,gemini-flash-lite-latest"   # + every other flash model the key can use (auto)
           GEMINI_MAX_WAIT_MIN: "20"
-        run: python cooking_shorts_bot.py
+        run: |
+          mkdir -p cache/pixabay   # keeps the cache step happy even on runs that never call Pixabay
+          python cooking_shorts_bot.py
 
       - name: Save video as run artifact
         if: always() && steps.check.outputs.skip != 'true'
