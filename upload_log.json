@@ -99,5 +99,31 @@
     "video_id": "OtQcrq7zLtE",
     "comment_text": "📌 Aloo Paratha ingredients: 2 cups gehu ka aata, 3 boiled potatoes, 1 tsp salt, 1 tsp oil, 1 tsp coriander powder, 1/2 tsp garam masala, 2 green chillies chopped, Fresh coriander leaves\n\nAapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋",
     "comment_posted": true
+  },
+  {
+    "date": "2026-11-20",
+    "recipe": "Rava Upma",
+    "title": "Rava Upma Recipe | Soft and Fluffy Suji Upma in 10 Min #shorts",
+    "duration": 54.8,
+    "visuals": [
+      "pixabay:hot frying pan smoke",
+      "pixabay:stirring semolina in pan",
+      "pixabay:tempering spices hot oil",
+      "pixabay:frying onions pan",
+      "pixabay:pouring water in pan",
+      "pixabay:adding flour stirring fast",
+      "pixabay:fluffing upma with fork"
+    ],
+    "music": "synth-upbeat",
+    "voice": "hi-IN-SwaraNeural",
+    "lang": "hi",
+    "model": "gemini-flash-lite-latest",
+    "music_mood": "upbeat",
+    "primary_keyword": "rava upma recipe",
+    "test_mode": false,
+    "bot_version": "1.6.0",
+    "video_id": "SqqBN7viss8",
+    "comment_text": "📌 Rava Upma ingredients: 1 cup rava (semolina), 2.5 cups water, 2 tbsp oil, 1 tsp mustard seeds, 1 tbsp chana dal, 1 tbsp urad dal, 10-12 cashews, 1 sprig curry leaves\n\nAapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋",
+    "comment_posted": true
   }
 ]
