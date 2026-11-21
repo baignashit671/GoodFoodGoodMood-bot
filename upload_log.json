@@ -125,5 +125,29 @@
     "video_id": "SqqBN7viss8",
     "comment_text": "📌 Rava Upma ingredients: 1 cup rava (semolina), 2.5 cups water, 2 tbsp oil, 1 tsp mustard seeds, 1 tbsp chana dal, 1 tbsp urad dal, 10-12 cashews, 1 sprig curry leaves\n\nAapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋",
     "comment_posted": true
+  },
+  {
+    "date": "2026-11-21",
+    "recipe": "Masala Dosa",
+    "title": "Masala Dosa Recipe | Crispy Restaurant Style Dosa at Home #shorts",
+    "duration": 40.1,
+    "visuals": [
+      "pixabay:crispy dosa spreading pan",
+      "pixabay:pouring dosa batter pan",
+      "pixabay:frying oil pan sizzle",
+      "pixabay:adding flour bowl",
+      "pixabay:potato masala dosa filling",
+      "pixabay:serving south indian food"
+    ],
+    "music": "synth-upbeat",
+    "voice": "hi-IN-SwaraNeural",
+    "lang": "hi",
+    "model": "gemini-flash-lite-latest",
+    "music_mood": "upbeat",
+    "primary_keyword": "masala dosa recipe",
+    "test_mode": false,
+    "bot_version": "1.6.0",
+    "video_id": "rC0ybUCtvAU",
+    "comment_text": "📌 Masala Dosa ingredients: 1 cup fermented dosa batter, 2 boiled and mashed potatoes, 1 medium onion sliced, 1 tsp mustard seeds, 1/2 tsp turmeric powder, 2-3 green chilies, 1 tbsp oil or butter, Salt to taste\n\nAapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋"
   }
 ]
