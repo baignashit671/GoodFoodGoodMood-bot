@@ -148,6 +148,32 @@
     "test_mode": false,
     "bot_version": "1.6.0",
     "video_id": "rC0ybUCtvAU",
-    "comment_text": "📌 Masala Dosa ingredients: 1 cup fermented dosa batter, 2 boiled and mashed potatoes, 1 medium onion sliced, 1 tsp mustard seeds, 1/2 tsp turmeric powder, 2-3 green chilies, 1 tbsp oil or butter, Salt to taste\n\nAapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋"
+    "comment_text": "📌 Masala Dosa ingredients: 1 cup fermented dosa batter, 2 boiled and mashed potatoes, 1 medium onion sliced, 1 tsp mustard seeds, 1/2 tsp turmeric powder, 2-3 green chilies, 1 tbsp oil or butter, Salt to taste\n\nAapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋",
+    "comment_posted": true
+  },
+  {
+    "date": "2026-11-22",
+    "recipe": "Idli Sambar",
+    "title": "Idli Sambar Recipe | Restaurant Style Sambar at Home in 10 Min #shorts",
+    "duration": 53.2,
+    "visuals": [
+      "pixabay:pouring dal into bowl",
+      "pixabay:pressure cooker steaming Indian kitchen",
+      "pixabay:frying spices in pan",
+      "pixabay:cooking onions and tomatoes",
+      "pixabay:adding powder spices curry",
+      "pixabay:stirring thick dal curry",
+      "pixabay:serving idli sambar plate"
+    ],
+    "music": "synth-upbeat",
+    "voice": "hi-IN-SwaraNeural",
+    "lang": "hi",
+    "model": "gemini-flash-lite-latest",
+    "music_mood": "upbeat",
+    "primary_keyword": "idli sambar recipe",
+    "test_mode": false,
+    "bot_version": "1.6.0",
+    "video_id": "XY7PUnHiDKA",
+    "comment_text": "📌 Idli Sambar ingredients: 1 cup tuar dal, 3 cups water, 1/2 tsp turmeric powder, Salt to taste, 2 tbsp oil, 1 tsp mustard seeds, 10-12 curry leaves, 2 dry red chilies\n\nAapko kaunsi recipe next chahiye? Comment karo! 👇\nWhich recipe should we make next? 😋"
   }
 ]
