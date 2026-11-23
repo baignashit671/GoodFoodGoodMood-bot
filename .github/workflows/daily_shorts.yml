@@ -1,12 +1,12 @@
 name: Daily Cooking Short (GoodFoodGoodMood)
 
 on:
-  schedule:
-    # GitHub cron is UTC and often fires hours late, so the job runs EARLY and the
-    # bot uploads as PRIVATE with publishAt -> YouTube flips it PUBLIC at exactly
-    # PUBLISH_AT_IST_HOUR (7 PM IST) regardless of when the job really ran.
-    - cron: "23 4 * * *"     # ~09:53 IST  main run
-    - cron: "13 8 * * *"     # ~13:43 IST  backup (skipped if today's Short already uploaded)
+  # Daily schedule turned OFF (23 Nov 2026): the channel now gets one Hindi food-science Short a day from the
+  # Claude scheduled task + publish-foodscience.yml. This recipe bot only runs when started by hand (Actions -> Run workflow).
+  # To turn it back on, restore:
+  #   schedule:
+  #     - cron: "23 4 * * *"     # ~09:53 IST  main run
+  #     - cron: "13 8 * * *"     # ~13:43 IST  backup
   workflow_dispatch:
     inputs:
       test_mode:

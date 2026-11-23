@@ -1,0 +1,38 @@
+# Twice a day snapshot the channel's numbers into foodscience/stats/latest.json, so the daily Claude run can see
+# which Shorts (its own food-science ones and every other upload on the channel) get views, and do more of what works.
+name: Channel stats snapshot
+
+on:
+  schedule:
+    - cron: "5 1,10 * * *"    # ~06:35 and ~15:35 IST, before the daily food-science run
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: channel-stats
+  cancel-in-progress: false
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Snapshot
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          ALL_UPLOADS: "1"
+        run: |
+          pip install -q google-api-python-client google-auth
+          cd foodscience && python ../scripts/channel_stats.py
+      - name: Commit
+        run: |
+          git config user.name "shorts-bot"; git config user.email "shorts-bot@users.noreply.github.com"
+          git add foodscience/stats/latest.json
+          git diff --cached --quiet && exit 0
+          git commit -m "stats: $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+          for i in 1 2 3; do git pull --rebase -q && git push && break; sleep 5; done

@@ -1,0 +1,98 @@
+# Publishes a GoodFoodGoodMood Hindi food-science Short when the daily Claude scheduled task pushes a branch cook/<name>.
+# Uses the channel's existing GOOGLE_CREDENTIALS secret (same one the recipe bot used) and refuses any other channel.
+# The branch is made FROM main and adds video/<anything>.mp4 + video/metadata.json
+#   { "title", "description", "tags": [...], "category_id", "privacy", "language": "hi", "topic", "style", "music" }
+name: Publish food-science Short to YouTube
+
+on:
+  push:
+    branches: ["cook/**"]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "cook/<name> branch to (re)publish"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cook-${{ github.ref_name || inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BRANCH: ${{ inputs.branch || github.ref_name }}
+    steps:
+      - name: Check out main (scripts + log)
+        uses: actions/checkout@v4
+        with: { ref: main, path: main }
+
+      - name: Check out the cook branch (video)
+        uses: actions/checkout@v4
+        with: { ref: "${{ env.BRANCH }}", path: branch }
+
+      - name: Link the video folder
+        run: ln -s branch/video pub
+
+      - name: Name + skip if already published
+        id: guard
+        run: |
+          name="${BRANCH#cook/}"; echo "name=$name" >> "$GITHUB_OUTPUT"
+          if [ -f "main/foodscience/results/$name.json" ]; then
+            echo "Already published:"; cat "main/foodscience/results/$name.json"; echo "skip=true" >> "$GITHUB_OUTPUT"
+          else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+          ls -la pub; test -f pub/metadata.json; ls pub/*.mp4
+
+      - name: Check the cooking channel token exists
+        if: steps.guard.outputs.skip == 'false'
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          if [ -z "$GOOGLE_CREDENTIALS" ]; then
+            echo "::error::Secret GOOGLE_CREDENTIALS is missing (run reauth_youtube.py), then re-run this workflow."
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.guard.outputs.skip == 'false'
+        with: { python-version: "3.12" }
+
+      - name: Upload to YouTube
+        if: steps.guard.outputs.skip == 'false'
+        id: yt
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          EXPECTED_CHANNEL_ID: UC_ShLTZzCGP-nAmO-yqDRRw
+        run: |
+          pip install -q google-api-python-client google-auth
+          python main/scripts/upload_youtube.py pub
+
+      - name: Record the result on main
+        if: steps.guard.outputs.skip == 'false'
+        env:
+          NAME: ${{ steps.guard.outputs.name }}
+          URL: ${{ steps.yt.outputs.url }}
+        run: |
+          cd main
+          mkdir -p foodscience/results
+          python - <<'PY'
+          import json, os, datetime
+          m = json.load(open('../pub/metadata.json'))
+          name, url = os.environ['NAME'], os.environ['URL']
+          d = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+          json.dump({'name': name, 'url': url, 'title': m['title'], 'privacy': m.get('privacy', 'public'), 'date': d, 'music': m.get('music', '')},
+                    open(f'foodscience/results/{name}.json', 'w'), indent=1, ensure_ascii=False)
+          if m.get('privacy', 'public') == 'public':
+              open('foodscience/_published.md', 'a', encoding='utf-8').write(f"- {d} | {m.get('topic','')} | {m.get('style','')} | {m['title']} | {url}\n")
+          PY
+          git config user.name "shorts-bot"; git config user.email "shorts-bot@users.noreply.github.com"
+          git add -A && git commit -m "food-science published: $NAME $URL"
+          for i in 1 2 3; do git pull --rebase -q && git push && break; sleep 5; done
+
+      - name: Delete the cook branch
+        if: always() && steps.guard.outcome == 'success'
+        run: git -C main push origin --delete "$BRANCH" || true

@@ -1,5 +1,9 @@
 # GoodFoodGoodMood — Daily Indian Cooking Shorts Bot
 
+> **Nov 2026 update:** the daily recipe bot below is switched OFF (manual runs only). The channel now gets one
+> Hindi food-science 3D Short a day from a Claude scheduled task: see [`foodscience/README.md`](foodscience/README.md).
+
+
 Fully automatic daily YouTube Short for **[@GoodFoodGoodMoodRecipies](https://www.youtube.com/@GoodFoodGoodMoodRecipies)**,
 built and uploaded by GitHub Actions. Same idea as `devops-genius-zone-bot`, rebuilt for vertical cooking Shorts.
 
