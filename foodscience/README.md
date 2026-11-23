@@ -1,8 +1,8 @@
 # Daily Hindi recipe Shorts: "Didi ki Recipe" (3D)
 
 A daily Claude scheduled task makes one Hindi recipe Short: Didi, the channel's 3D host (an Indian woman in a saree),
-cooks the next dish from `../recipes.yaml` in a desi kitchen, step by step with real quantities, plus one short
-"kyun?" food-science moment. Deep Dive 3D style of the faceless-shorts skill; the run pushes it to a branch `cook/<date>-<slug>`.
+cooks the next dish from `../recipes.yaml` in a desi kitchen, step by step with real quantities, in the fast close-up
+style of the most-viewed Indian recipe Shorts. Voice in Hindi, captions in Roman Hinglish (`"capsByIndex": true`). Deep Dive 3D style of the faceless-shorts skill; the run pushes it to a branch `cook/<date>-<slug>`.
 `.github/workflows/publish-foodscience.yml` uploads it to **@GoodFoodGoodMoodRecipies** with the repo's existing
 `GOOGLE_CREDENTIALS` secret (no new secret needed), logs it here and deletes the branch.
 
@@ -14,7 +14,7 @@ The old recipe bot (`cooking_shorts_bot.py`, `daily_shorts.yml`) is switched off
 | `results/<name>.json` | YouTube link of every upload |
 | `stats/latest.json` | channel numbers + views/hour of every Short on the channel (refreshed twice a day by `channel-stats.yml`) |
 | `SCHEDULED_TASK_PROMPT.md` | the exact prompt the daily Claude scheduled task runs |
-| `kit/apply.sh` | turns a fresh faceless-shorts project into a Hindi one: Devanagari captions (Hind font, SIL OFL), Hindi Kokoro voices (Didi = hf_alpha), Devanagari-safe word timing, no fade-in |
+| `kit/apply.sh` | turns a fresh faceless-shorts project into a Hindi one: Devanagari captions (Hind font, SIL OFL), Hindi Kokoro voices (Didi = hf_alpha), Devanagari-safe word timing, Roman Hinglish captions timed by word index (capsByIndex), no fade-in |
 | `kit/beats.py` | original royalty-free "trending-style" music beds: desi-lofi, chill-lofi, phonk, bollywood-pop, suspense-pluck |
 | `kit/cook.js` | `cook()` = Didi (pink saree + gold border, green blouse, long choti with paranda, bindi, jhumkas, bangles, kajal) on the kit's Human rig; `desiKitchen(scene)` = tiles, 2-burner gas stove with flames, masala dabba, lota |
 | `kit/food.js` | 3D food props: onion, chili, tomato, kadai, tawa, plate, bowl, knife, glass, cup, spoon, steam, chopped pieces |

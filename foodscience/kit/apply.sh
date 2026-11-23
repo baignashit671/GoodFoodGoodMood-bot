@@ -39,8 +39,11 @@ for f in ['src/core/timing.js', 'src/core/captions.js']:
 patch('src/main.js', "const fade = Math.min(clamp(t / 0.25), clamp((T.dur - t) / 0.4));",
       "const fade = clamp((T.dur - t) / 0.4);   // no fade-in: the hook frame is on screen from frame one")
 patch('src/main.js', "  drawCaption(t);\n}", "  drawCaption(Math.max(t, 0.16));   // first caption visible from frame one\n}")
+# Roman (Hinglish) captions for Devanagari narration: with "capsByIndex": true in script.json, each line's "caps" are
+# written in Roman letters with exactly one caption word per spoken (Devanagari) word, and chunks are timed by word index.
+patch('src/core/captions.js', "let idx = j === 0 ? 0 :", "let idx = script.capsByIndex ? Math.min(ws.length - 1, acc) : j === 0 ? 0 :")
 patch('tools/mix.py', "db(-24 if voice is not None else -20)", "db(float(script.get('music_db', -24)) if voice is not None else -20)")
-print('patched index.html, main.js, timing.js, captions.js, mix.py')
+print('patched index.html, main.js, timing.js, captions.js (+capsByIndex), mix.py')
 PY
 
 sed -e "s/lang = 'en-gb' if voice.startswith('b') else 'en-us'/lang = 'hi' if voice.startswith('h') else ('en-gb' if voice.startswith('b') else 'en-us')/" \
