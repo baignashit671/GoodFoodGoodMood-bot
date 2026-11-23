@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Turn a fresh faceless-shorts project (made with new_video.sh) into a GoodFoodGoodMood Hindi project:
-#   bash cooking/kit/apply.sh <project>
+#   bash foodscience/kit/apply.sh <project>
 # - Devanagari captions/pills: Hind (SIL OFL) is registered as part of the 'Inter' family for Devanagari code points,
 #   so every caption, pill and label keeps working with no code change.
 # - Word matching (Wd, captions) keeps Devanagari letters instead of stripping them.
@@ -9,6 +9,7 @@
 # - tools/align.py: word timing that weighs Devanagari words by their letters.
 # - tools/beats.py: original trending-style music beds (royalty-free, made in code).
 # - src/core/food.js: food props in the Deep Dive clay look.
+# - src/core/cook.js: cook() = Didi, the channel's Indian woman host in a saree; desiKitchen(scene) = gas stove, masala dabba, tiles, lota.
 set -euo pipefail
 KIT="$(cd "$(dirname "$0")" && pwd)"; REPO="$(cd "$KIT/../.." && pwd)"
 P="$(cd "${1:?usage: apply.sh <project>}" && pwd)"
@@ -50,5 +51,6 @@ grep -q "।" "$P/tools/voice.py" || { echo "voice.py danda patch failed"; exit 
 sed -e 's/\[\^A-Za-z0-9\]/[\\W_]/g' "$REPO/scripts/align.py" > "$P/tools/align.py"
 cp "$KIT/beats.py" "$P/tools/beats.py"
 cp "$KIT/food.js" "$P/src/core/food.js"
+cp "$KIT/cook.js" "$P/src/core/cook.js"
 echo "cooking kit applied to $P"
 echo "next: \$SKILL/scripts/py tools/voice.py . && \$SKILL/scripts/py tools/align.py . && \$SKILL/scripts/py tools/beats.py . <preset>"
