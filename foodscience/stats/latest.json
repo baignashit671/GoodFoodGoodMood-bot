@@ -1,11 +1,24 @@
 {
- "updated": "2026-11-24T10:43Z",
+ "updated": "2026-11-25T09:38Z",
  "channel": {
-  "viewCount": 2117,
+  "viewCount": 2161,
   "subscriberCount": 35,
-  "videoCount": 25
+  "videoCount": 26
  },
  "videos": [
+  {
+   "id": "VguwaVmKX7k",
+   "url": "https://www.youtube.com/watch?v=VguwaVmKX7k",
+   "title": "Medu Vada Recipe | Bahar Crispy Andar Soft #shorts",
+   "published": "2026-11-24T12:29:35Z",
+   "duration": "PT49S",
+   "category_id": "26",
+   "views": 24,
+   "likes": 1,
+   "comments": 0,
+   "hours_live": 21.1,
+   "views_per_hour": 1.1
+  },
   {
    "id": "h3WrOuZZvtk",
    "url": "https://www.youtube.com/watch?v=h3WrOuZZvtk",
@@ -13,11 +26,11 @@
    "published": "2026-11-23T15:48:31Z",
    "duration": "PT27S",
    "category_id": "27",
-   "views": 3,
-   "likes": 2,
+   "views": 5,
+   "likes": 3,
    "comments": 0,
-   "hours_live": 18.9,
-   "views_per_hour": 0.2,
+   "hours_live": 41.8,
+   "views_per_hour": 0.1,
    "date": "2026-11-23",
    "topic": "why water doesn't stop chilli burn",
    "style": "deep-dive-hindi"
@@ -29,11 +42,11 @@
    "published": "2026-11-22T13:30:12Z",
    "duration": "PT54S",
    "category_id": "26",
-   "views": 62,
-   "likes": 0,
+   "views": 73,
+   "likes": 1,
    "comments": 0,
-   "hours_live": 45.2,
-   "views_per_hour": 1.4,
+   "hours_live": 68.1,
+   "views_per_hour": 1.1,
    "source": "other"
   },
   {
@@ -43,10 +56,10 @@
    "published": "2026-11-21T13:30:15Z",
    "duration": "PT41S",
    "category_id": "26",
-   "views": 8,
-   "likes": 0,
+   "views": 10,
+   "likes": 1,
    "comments": 1,
-   "hours_live": 69.2,
+   "hours_live": 92.1,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -57,10 +70,10 @@
    "published": "2026-11-20T18:23:15Z",
    "duration": "PT50S",
    "category_id": "26",
-   "views": 6,
+   "views": 8,
    "likes": 2,
    "comments": 0,
-   "hours_live": 88.3,
+   "hours_live": 111.3,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -71,10 +84,10 @@
    "published": "2026-11-20T13:19:35Z",
    "duration": "PT55S",
    "category_id": "26",
-   "views": 6,
+   "views": 10,
    "likes": 2,
    "comments": 1,
-   "hours_live": 93.4,
+   "hours_live": 116.3,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -88,7 +101,7 @@
    "views": 4,
    "likes": 2,
    "comments": 1,
-   "hours_live": 117.1,
+   "hours_live": 140.0,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -102,7 +115,7 @@
    "views": 16,
    "likes": 2,
    "comments": 1,
-   "hours_live": 141.4,
+   "hours_live": 164.3,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -113,10 +126,10 @@
    "published": "2026-11-17T13:30:02Z",
    "duration": "PT51S",
    "category_id": "26",
-   "views": 14,
+   "views": 16,
    "likes": 2,
    "comments": 0,
-   "hours_live": 165.2,
+   "hours_live": 188.1,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -130,7 +143,7 @@
    "views": 8,
    "likes": 2,
    "comments": 0,
-   "hours_live": 183.1,
+   "hours_live": 206.0,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -144,7 +157,7 @@
    "views": 20,
    "likes": 2,
    "comments": 0,
-   "hours_live": 184.4,
+   "hours_live": 207.3,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -158,8 +171,8 @@
    "views": 11,
    "likes": 2,
    "comments": 0,
-   "hours_live": 215.8,
-   "views_per_hour": 0.1,
+   "hours_live": 238.7,
+   "views_per_hour": 0.0,
    "source": "other"
   },
   {
@@ -172,7 +185,7 @@
    "views": 20,
    "likes": 5,
    "comments": 2,
-   "hours_live": 7680.8,
+   "hours_live": 7703.7,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -186,7 +199,7 @@
    "views": 28,
    "likes": 5,
    "comments": 2,
-   "hours_live": 8728.9,
+   "hours_live": 8751.8,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -200,7 +213,7 @@
    "views": 24,
    "likes": 5,
    "comments": 1,
-   "hours_live": 8761.5,
+   "hours_live": 8784.4,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -214,7 +227,7 @@
    "views": 50,
    "likes": 4,
    "comments": 1,
-   "hours_live": 11400.4,
+   "hours_live": 11423.3,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -228,7 +241,7 @@
    "views": 355,
    "likes": 8,
    "comments": 0,
-   "hours_live": 11567.9,
+   "hours_live": 11590.8,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -242,7 +255,7 @@
    "views": 32,
    "likes": 3,
    "comments": 1,
-   "hours_live": 11568.5,
+   "hours_live": 11591.5,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -256,7 +269,7 @@
    "views": 248,
    "likes": 6,
    "comments": 1,
-   "hours_live": 11637.1,
+   "hours_live": 11660.0,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -270,7 +283,7 @@
    "views": 62,
    "likes": 3,
    "comments": 0,
-   "hours_live": 11655.1,
+   "hours_live": 11678.0,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -284,7 +297,7 @@
    "views": 931,
    "likes": 21,
    "comments": 0,
-   "hours_live": 11655.4,
+   "hours_live": 11678.3,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -298,7 +311,7 @@
    "views": 29,
    "likes": 4,
    "comments": 2,
-   "hours_live": 11688.1,
+   "hours_live": 11711.0,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -312,7 +325,7 @@
    "views": 23,
    "likes": 5,
    "comments": 1,
-   "hours_live": 11688.7,
+   "hours_live": 11711.7,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -326,7 +339,7 @@
    "views": 90,
    "likes": 4,
    "comments": 1,
-   "hours_live": 13362.7,
+   "hours_live": 13385.6,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -340,7 +353,7 @@
    "views": 39,
    "likes": 6,
    "comments": 1,
-   "hours_live": 16032.6,
+   "hours_live": 16055.5,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -354,7 +367,7 @@
    "views": 34,
    "likes": 5,
    "comments": 0,
-   "hours_live": 16055.8,
+   "hours_live": 16078.7,
    "views_per_hour": 0.0,
    "source": "other"
   }
