@@ -4,13 +4,18 @@ The look of the viral Indian "cartoon explainer" Reels: 2D webtoon-style AI illu
 title banner with a red rim, a flip-clock step counter (1, 2, 3...), Hindi voice, Roman Hinglish word-synced captions,
 Ken Burns motion on every shot and an original music bed. Host: Didi drawn as a 2D cartoon (same identity as the 3D Didi).
 
-**How it runs.** The daily Claude scheduled task writes only the script (`job.json`) and pushes a branch
-`toon/<YYYY-MM-DD>-<slug>` made from `main` that adds `toon_job/job.json`. `.github/workflows/publish-toon.yml` then does
-everything heavy on GitHub's free runner: images from Pollinations (Flux, free, no key: 1 image every ~45 s, so ~6-10 min for a Short) → edge-tts Hindi voice
-(`hi-IN-SwaraNeural`) → captions → banner/counter → music (`foodscience/kit/beats.py`) → MP4 (`toon/build.py`) → upload with
-`scripts/upload_youtube.py` (guarded to the cooking channel) → `toon/results/<name>.json` + a line in
-`foodscience/_published.md` (shared topic log) → deletes the branch. The MP4 and a review contact sheet are also kept as a
-run artifact for 7 days. `"dry_run": true` in job.json builds without uploading.
+**How it runs (two phases on one branch `toon/<YYYY-MM-DD>-<slug>`, made from `main`).**
+1. BUILD: the daily Claude scheduled task writes only the script and pushes the branch with `toon_job/job.json`.
+   `.github/workflows/publish-toon.yml` does the heavy work on GitHub's free runner: images from Pollinations (Flux, free,
+   no key: 1 image every ~45 s, so ~10-25 min for a Short; saved in `toon_job/images/NN.jpg`) → edge-tts Hindi voice
+   (`hi-IN-SwaraNeural`) → captions → banner + flip counter → music (`foodscience/kit/beats.py`) → MP4 (`toon/build.py`),
+   and commits `toon_build/` (MP4, `metadata.json`, `review/sheet.jpg`, one 540x960 frame per scene) to the same branch.
+   Nothing is uploaded yet.
+2. REVIEW + PUBLISH: the task fetches the branch and looks at every review frame. To fix a scene it deletes
+   `toon_job/images/NN.jpg`, edits that scene's `image` prompt (or `seed`), deletes `toon_build/` and pushes (only the
+   deleted images are re-generated). When everything is right it pushes an empty `toon_job/APPROVED`: the workflow uploads
+   with `scripts/upload_youtube.py` (guarded to the cooking channel), writes `toon/results/<name>.json` + a line in
+   `foodscience/_published.md` (shared topic log) on main, and deletes the branch. Never pushing APPROVED = a dry run.
 
 Optional secrets: `POLLINATIONS_API_KEY` (free at enter.pollinations.ai; removes the ~15 s throttle and watermark risk),
 `CF_ACCOUNT_ID` + `CF_API_TOKEN` (Cloudflare Workers AI Flux fallback). None are required.
@@ -25,5 +30,6 @@ See `example_job.json` (masala chai). Rules:
 - `banner`: the top plaque (dish name, ingredient + quantity, "3 MINUTE"); `step`: the counter digit (omit = no counter).
 - `move`: zoom_in / zoom_out / pan_left / pan_right / pan_up / pan_down.
 - `metadata`: title, description, tags, category_id "26", privacy, language "hi", topic, style "desi-toon", music.
+- `seed` (top level, optional): change it to re-roll all images.
 
 Local test without network: `python toon/build.py toon/example_job.json /tmp/out --demo`.

@@ -213,6 +213,7 @@ def get_images(job, job_dir, work, demo):
         if not ok:
             sys.exit(f"image for scene {i + 1} failed on every provider; not publishing a broken video")
         log(f"image {i + 1}/{len(job['scenes'])} ok")
+        own.parent.mkdir(parents=True, exist_ok=True); Image.open(dest).convert("RGB").save(own, quality=92)   # kept for re-builds
         paths.append(dest)
     return paths
 
@@ -429,7 +430,8 @@ def main():
         rgb = fr.convert("RGB")
         ff.stdin.write(rgb.tobytes())
         if fi % (FPS // 2) == 0: sheet.append((t, rgb.resize((216, 384))))
-        if fi in (0, int(nframes / 2)): rgb.save(review / f"frame_{t:05.1f}.jpg", quality=88)
+        if fi == 0 or abs(t - (tl["start"] + tl["dur"] * 0.6)) < 0.5 / FPS:   # first frame + one per scene
+            rgb.resize((540, 960)).save(review / f"s{si + 1:02d}_{t:04.1f}s.jpg", quality=86)
     ff.stdin.close(); ff.wait()
     if ff.returncode: sys.exit("ffmpeg failed")
 
