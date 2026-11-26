@@ -1,11 +1,24 @@
 {
- "updated": "2026-11-26T09:14Z",
+ "updated": "2026-11-26T19:26Z",
  "channel": {
-  "viewCount": 2240,
+  "viewCount": 2272,
   "subscriberCount": 35,
-  "videoCount": 27
+  "videoCount": 28
  },
  "videos": [
+  {
+   "id": "urhB-hmouzw",
+   "url": "https://www.youtube.com/watch?v=urhB-hmouzw",
+   "title": "Dal Tadka Recipe | Dhabe Jaisi Ghar Par #shorts",
+   "published": "2026-11-26T12:25:24Z",
+   "duration": "PT51S",
+   "category_id": "26",
+   "views": 5,
+   "likes": 2,
+   "comments": 0,
+   "hours_live": 7.0,
+   "views_per_hour": 0.7
+  },
   {
    "id": "86ngo_RtDIs",
    "url": "https://www.youtube.com/watch?v=86ngo_RtDIs",
@@ -13,11 +26,11 @@
    "published": "2026-11-25T12:37:58Z",
    "duration": "PT50S",
    "category_id": "26",
-   "views": 58,
+   "views": 72,
    "likes": 1,
    "comments": 0,
-   "hours_live": 20.6,
-   "views_per_hour": 2.8
+   "hours_live": 30.8,
+   "views_per_hour": 2.3
   },
   {
    "id": "VguwaVmKX7k",
@@ -26,10 +39,10 @@
    "published": "2026-11-24T12:29:35Z",
    "duration": "PT49S",
    "category_id": "26",
-   "views": 53,
+   "views": 64,
    "likes": 1,
    "comments": 0,
-   "hours_live": 44.7,
+   "hours_live": 54.9,
    "views_per_hour": 1.2
   },
   {
@@ -39,10 +52,10 @@
    "published": "2026-11-23T15:48:31Z",
    "duration": "PT27S",
    "category_id": "27",
-   "views": 6,
+   "views": 7,
    "likes": 3,
    "comments": 0,
-   "hours_live": 65.4,
+   "hours_live": 75.6,
    "views_per_hour": 0.1,
    "date": "2026-11-23",
    "topic": "why water doesn't stop chilli burn",
@@ -55,11 +68,11 @@
    "published": "2026-11-22T13:30:12Z",
    "duration": "PT54S",
    "category_id": "26",
-   "views": 74,
+   "views": 75,
    "likes": 1,
    "comments": 0,
-   "hours_live": 91.7,
-   "views_per_hour": 0.8,
+   "hours_live": 101.9,
+   "views_per_hour": 0.7,
    "source": "other"
   },
   {
@@ -69,10 +82,10 @@
    "published": "2026-11-21T13:30:15Z",
    "duration": "PT41S",
    "category_id": "26",
-   "views": 10,
+   "views": 13,
    "likes": 1,
    "comments": 1,
-   "hours_live": 115.7,
+   "hours_live": 125.9,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -86,7 +99,7 @@
    "views": 8,
    "likes": 2,
    "comments": 0,
-   "hours_live": 134.9,
+   "hours_live": 145.1,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -100,7 +113,7 @@
    "views": 12,
    "likes": 2,
    "comments": 1,
-   "hours_live": 139.9,
+   "hours_live": 150.1,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -114,7 +127,7 @@
    "views": 4,
    "likes": 2,
    "comments": 1,
-   "hours_live": 163.6,
+   "hours_live": 173.8,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -128,7 +141,7 @@
    "views": 17,
    "likes": 2,
    "comments": 1,
-   "hours_live": 187.9,
+   "hours_live": 198.1,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -142,7 +155,7 @@
    "views": 16,
    "likes": 2,
    "comments": 0,
-   "hours_live": 211.7,
+   "hours_live": 221.9,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -156,7 +169,7 @@
    "views": 8,
    "likes": 2,
    "comments": 0,
-   "hours_live": 229.6,
+   "hours_live": 239.8,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -170,7 +183,7 @@
    "views": 20,
    "likes": 2,
    "comments": 0,
-   "hours_live": 230.9,
+   "hours_live": 241.1,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -184,7 +197,7 @@
    "views": 11,
    "likes": 2,
    "comments": 0,
-   "hours_live": 262.3,
+   "hours_live": 272.5,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -198,7 +211,7 @@
    "views": 20,
    "likes": 5,
    "comments": 2,
-   "hours_live": 7727.3,
+   "hours_live": 7737.5,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -212,7 +225,7 @@
    "views": 28,
    "likes": 5,
    "comments": 2,
-   "hours_live": 8775.4,
+   "hours_live": 8785.6,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -226,7 +239,7 @@
    "views": 24,
    "likes": 5,
    "comments": 1,
-   "hours_live": 8808.0,
+   "hours_live": 8818.2,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -240,7 +253,7 @@
    "views": 50,
    "likes": 4,
    "comments": 1,
-   "hours_live": 11446.9,
+   "hours_live": 11457.1,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -254,7 +267,7 @@
    "views": 355,
    "likes": 8,
    "comments": 0,
-   "hours_live": 11614.4,
+   "hours_live": 11624.6,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -268,7 +281,7 @@
    "views": 32,
    "likes": 3,
    "comments": 1,
-   "hours_live": 11615.1,
+   "hours_live": 11625.3,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -282,7 +295,7 @@
    "views": 248,
    "likes": 6,
    "comments": 1,
-   "hours_live": 11683.6,
+   "hours_live": 11693.8,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -296,7 +309,7 @@
    "views": 62,
    "likes": 3,
    "comments": 0,
-   "hours_live": 11701.6,
+   "hours_live": 11711.8,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -310,7 +323,7 @@
    "views": 931,
    "likes": 21,
    "comments": 0,
-   "hours_live": 11701.9,
+   "hours_live": 11712.1,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -324,7 +337,7 @@
    "views": 29,
    "likes": 4,
    "comments": 2,
-   "hours_live": 11734.6,
+   "hours_live": 11744.8,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -338,7 +351,7 @@
    "views": 23,
    "likes": 5,
    "comments": 1,
-   "hours_live": 11735.3,
+   "hours_live": 11745.5,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -352,7 +365,7 @@
    "views": 90,
    "likes": 4,
    "comments": 1,
-   "hours_live": 13409.2,
+   "hours_live": 13419.4,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -366,7 +379,7 @@
    "views": 39,
    "likes": 6,
    "comments": 1,
-   "hours_live": 16079.1,
+   "hours_live": 16089.3,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -380,7 +393,7 @@
    "views": 34,
    "likes": 5,
    "comments": 0,
-   "hours_live": 16102.3,
+   "hours_live": 16112.5,
    "views_per_hour": 0.0,
    "source": "other"
   }
