@@ -4,38 +4,90 @@
  "rate": "+8%",
  "music": "desi-lofi",
  "seed": 4242,
- "character": "Didi, the same young Indian woman in every scene: late 20s, warm friendly smile, big expressive brown eyes, small red bindi, gold jhumka earrings, long black hair in a single thick braid over her right shoulder, pink saree with a gold border, green blouse, gold and green glass bangles",
- "style": "2D digital comic illustration, Indian webtoon style, clean bold black ink outlines, soft cel shading, warm golden afternoon light, rich saturated colours, cosy Indian home kitchen with tiled wall and steel utensils, expressive faces, cinematic composition, vertical 9:16 frame, no text, no letters, no watermark, no logo",
+ "character": "Didi is a cheerful young Indian woman with a round friendly face, big brown eyes, small red bindi, gold jhumka earrings and one long black braid, wearing a traditional pink saree with a gold border and a green full-sleeve blouse",
  "scenes": [
-  {"say": "ठंड में ऐसी चाय पी है कभी?", "caps": "Thand mein *AISI | chai pi *HAI | *KABHI?",
-   "image": "close-up of a steaming glass of dark orange masala chai on a steel tray, curls of steam, Didi smiling behind it holding the glass with both hands", "didi": true,
-   "banner": "MASALA CHAI", "move": "zoom_in"},
-  {"say": "बस पाँच चीज़ें चाहिए।", "caps": "Bas paanch *CHEEZEIN | *CHAHIYE.",
-   "image": "top-down flat lay on a wooden counter: a cup of milk, loose black tea leaves in a steel bowl, a piece of fresh ginger, green cardamom pods, sugar in a small bowl",
-   "banner": "5 CHEEZEIN", "move": "pan_down"},
-  {"say": "एक कप पानी उबालो।", "caps": "Ek cup *PAANI | *UBAALO.",
-   "image": "Didi pouring water from a steel lota into a small steel saucepan on a blue gas flame, side view", "didi": true,
-   "banner": "1 CUP PAANI", "step": "1", "move": "zoom_in"},
-  {"say": "अदरक कूटकर डालो, दो इलायची भी।", "caps": "Adrak kootkar *DAALO, | do *ILAYCHI | *BHI.",
-   "image": "close-up of Didi's hands crushing fresh ginger in a small stone mortar, crushed cardamom pods dropping into the boiling saucepan", "didi": true,
-   "banner": "ADRAK + ELAICHI", "step": "2", "move": "pan_left"},
-  {"say": "अब दो चम्मच चायपत्ती।", "caps": "Ab do *CHAMMACH | *CHAAYPATTI.",
-   "image": "extreme close-up of a steel spoon dropping dark tea leaves into bubbling water, the water turning deep amber",
-   "banner": "2 TSP CHAAYPATTI", "step": "3", "move": "zoom_in"},
-  {"say": "दूध और चीनी डालकर तीन मिनट उबालो।", "caps": "Doodh aur *CHEENI | daalkar teen *MINUTE | *UBAALO.",
-   "image": "milk being poured into the saucepan making a creamy swirl, the chai rising with foam, Didi watching with a wooden spoon in hand", "didi": true,
-   "banner": "3 MINUTE UBAALO", "step": "4", "move": "zoom_out"},
-  {"say": "छानो, और गरमागरम पियो!", "caps": "*CHHAANO, aur garamagaram *PIYO!",
-   "image": "Didi straining hot masala chai through a steel strainer into two small glasses, steam rising, cosy window light", "didi": true,
-   "banner": "MASALA CHAI", "move": "pan_up"},
-  {"say": "ऐसी रेसिपी के लिए सब्सक्राइब करो!", "caps": "Aisi recipe ke *LIYE | *SUBSCRIBE karo!",
-   "image": "Didi sitting by a window sipping chai from a glass, eyes closed, happy, steam curling, warm sunset light", "didi": true,
-   "banner": "MASALA CHAI", "move": "zoom_in"}
+  {
+   "say": "ठंड में ऐसी चाय पी है कभी?",
+   "caps": "Thand mein *AISI | chai pi *HAI | *KABHI?",
+   "image": "Didi smiling and holding a glass of steaming orange masala chai close to the viewer in a cosy Indian kitchen",
+   "didi": true,
+   "banner": "MASALA CHAI",
+   "move": "zoom_in"
+  },
+  {
+   "say": "बस पाँच चीज़ें चाहिए।",
+   "caps": "Bas paanch *CHEEZEIN | *CHAHIYE.",
+   "image": "top-down view of five small steel bowls on a wooden counter: white milk, black loose tea leaves, a knob of ginger root, green cardamom pods, white sugar",
+   "banner": "5 CHEEZEIN",
+   "move": "pan_down"
+  },
+  {
+   "say": "एक कप पानी उबालो।",
+   "caps": "Ek cup *PAANI | *UBAALO.",
+   "image": "Didi pouring water from a steel jug into a small steel saucepan on a gas stove with a blue flame, Indian kitchen",
+   "didi": true,
+   "banner": "1 CUP PAANI",
+   "step": "1",
+   "move": "zoom_in"
+  },
+  {
+   "say": "अदरक कूटकर डालो, दो इलायची भी।",
+   "caps": "Adrak kootkar *DAALO, | do *ILAYCHI | *BHI.",
+   "image": "close-up of Didi crushing ginger in a small stone mortar and pestle next to the stove",
+   "didi": true,
+   "banner": "ADRAK + ELAICHI",
+   "step": "2",
+   "move": "pan_left"
+  },
+  {
+   "say": "अब दो चम्मच चायपत्ती।",
+   "caps": "Ab do *CHAMMACH | *CHAAYPATTI.",
+   "image": "close-up of a spoon of black tea leaves falling into a steel saucepan of boiling amber water, steam",
+   "banner": "2 TSP CHAAYPATTI",
+   "step": "3",
+   "move": "zoom_in"
+  },
+  {
+   "say": "दूध और चीनी डालकर तीन मिनट उबालो।",
+   "caps": "Doodh aur *CHEENI | daalkar teen *MINUTE | *UBAALO.",
+   "image": "Didi stirring creamy light-brown boiling chai in a steel saucepan on the stove with a spoon, steam rising",
+   "didi": true,
+   "banner": "3 MINUTE UBAALO",
+   "step": "4",
+   "move": "zoom_out"
+  },
+  {
+   "say": "छानो, और गरमागरम पियो!",
+   "caps": "*CHHAANO, | aur *GARAMAGARAM | *PIYO!",
+   "image": "Didi pouring hot chai through a steel strainer into two small glasses, steam rising",
+   "didi": true,
+   "banner": "MASALA CHAI",
+   "move": "pan_up"
+  },
+  {
+   "say": "ऐसी रेसिपी के लिए सब्सक्राइब करो!",
+   "caps": "Aisi recipe ke *LIYE | *SUBSCRIBE karo!",
+   "image": "Didi sitting by a sunny window happily sipping chai from a small glass, eyes closed",
+   "didi": true,
+   "banner": "MASALA CHAI",
+   "move": "zoom_in"
+  }
  ],
  "metadata": {
   "title": "Masala Chai Recipe | Thand Ki Best Chai #shorts",
   "description": "Masala chai recipe jo thand mein sabse best lagti hai!\n\nIngredients:\n- Paani 1 cup\n- Doodh 1 cup\n- Chaaypatti 2 tsp\n- Adrak 1 inch\n- Elaichi 2\n- Cheeni 2 tsp\n\nMethod:\n1. Paani ubaalo\n2. Adrak aur elaichi kootkar daalo\n3. Chaaypatti daalo\n4. Doodh aur cheeni daalkar 3 minute ubaalo\n5. Chhaan kar garam pariso\n\nRoz ek nayi recipe ke liye Subscribe karein!\n\n#shorts #recipe #indianfood #masalachai",
-  "tags": ["masala chai", "masala chai recipe", "adrak wali chai", "chai recipe", "indian tea", "chai kaise banaye", "masala tea", "easy indian recipe", "winter chai", "elaichi chai"],
+  "tags": [
+   "masala chai",
+   "masala chai recipe",
+   "adrak wali chai",
+   "chai recipe",
+   "indian tea",
+   "chai kaise banaye",
+   "masala tea",
+   "easy indian recipe",
+   "winter chai",
+   "elaichi chai"
+  ],
   "category_id": "26",
   "privacy": "public",
   "language": "hi",

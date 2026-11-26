@@ -38,9 +38,10 @@ BEATS = ROOT / "foodscience/kit/beats.py"
 CAP_Y = 1400                    # caption centre (caption zone 1250-1550)
 BANNER_Y = 150                  # banner top (below the Shorts top UI)
 
-DEFAULT_STYLE = ("2D digital comic illustration, Indian webtoon style, clean bold black ink outlines, soft cel shading, "
-                 "warm golden afternoon light, rich saturated colours, detailed Indian background, expressive faces, "
-                 "cinematic composition, vertical 9:16 frame, no text, no letters, no watermark, no logo")
+DEFAULT_STYLE = ("Flat 2D cartoon illustration in Indian comic webtoon style, thick clean black ink outlines, cel shading, "
+                 "bright warm saturated colours, simple shapes, expressive cartoon faces, NOT a photo, NOT realistic")
+COMPOSITION = ("main subject in the lower two thirds of the frame, calm uncluttered top third, vertical 9:16 frame, "
+               "no text, no letters, no watermark, no logo")
 NEG = "text, letters, words, caption, watermark, logo, signature, extra fingers, deformed hands, blurry, photo, 3d render"
 
 
@@ -126,11 +127,11 @@ def time_chunks(chunks, bounds, dur, spoken_n):
 
 # ── images ─────────────────────────────────────────────────────────────────────
 def scene_prompt(job, sc):
-    parts = [sc["image"]]
+    parts = [job.get("style") or DEFAULT_STYLE, sc["image"]]
     if sc.get("didi", False) and job.get("character"):
         parts.append(job["character"])
-    parts.append(job.get("style") or DEFAULT_STYLE)
-    return ", ".join(parts)
+    parts.append(job.get("composition") or COMPOSITION)
+    return ". ".join(p.strip().rstrip(".") for p in parts)
 
 
 def valid(p):
@@ -233,13 +234,13 @@ def font(sz):
     return _fonts[sz]
 
 
-def banner_img(text):
+def banner_img(text, maxw=820):
     """Cream rounded plaque with a deep-red rim and brass rivets, bold dark text (1-2 lines)."""
     text = text.upper(); f = font(96)
     words, lines, cur = text.split(), [], ""
     for w in words:
         t = (cur + " " + w).strip()
-        if f.getlength(t) > 820 and cur: lines.append(cur); cur = w
+        if f.getlength(t) > maxw and cur: lines.append(cur); cur = w
         else: cur = t
     lines.append(cur)
     if len(lines) > 2: f = font(76)
@@ -401,14 +402,16 @@ def main():
         # banner (pops in when it changes)
         bt = sc.get("banner")
         if bt:
-            if bt not in banners: banners[bt] = banner_img(bt)
-            b = banners[bt]; fresh = si == 0 or scenes[si - 1].get("banner") != bt
+            row = bool(sc.get("step"))                       # banner + counter share one row (keeps faces clear)
+            if (bt, row) not in banners: banners[(bt, row)] = banner_img(bt, 600 if row else 820)
+            b = banners[(bt, row)]; fresh = si == 0 or scenes[si - 1].get("banner") != bt
             s = 1.0 if (not fresh or si == 0) else min(1, 0.6 + 0.4 * ease(lt / 0.22)) * (1 + 0.06 * math.sin(min(lt / 0.3, 1) * math.pi))
             bb = b if s == 1.0 else b.resize((int(b.width * s), int(b.height * s)), Image.BICUBIC)
-            fr.alpha_composite(bb, ((W - bb.width) // 2, BANNER_Y + (b.height - bb.height) // 2))
-            by = BANNER_Y + b.height
+            bx = (W - b.width) // 2 if not row else 230 + (W - 230 - 20 - b.width) // 2
+            fr.alpha_composite(bb, (bx + (b.width - bb.width) // 2, BANNER_Y + (b.height - bb.height) // 2))
+            bh = b.height
         else:
-            by = BANNER_Y
+            bh = 0
         # step counter (flips when the number changes)
         st = sc.get("step")
         if st:
@@ -418,8 +421,10 @@ def main():
                 sq = abs(math.cos(math.pi * lt / 0.24)); txt = scenes[si - 1].get("step") or st if lt < 0.12 else st
             else:
                 txt = st
-            c = counter_img(txt, max(sq, 0.04))
-            fr.alpha_composite(c, ((W - c.width) // 2, by + 10 + (counter_img(txt).height - c.height) // 2))
+            c = counter_img(txt, max(sq, 0.04)); full = 280
+            cy = BANNER_Y + max(0, (bh - full) // 2) if bt else BANNER_Y
+            cx = 30 if bt else (W - c.width) // 2
+            fr.alpha_composite(c, (cx, cy + (full - c.height) // 2))
         # caption
         for s0, e0, words in tl["chunks"]:
             if s0 <= t < e0 or (t >= e0 and (s0, e0, words) == tl["chunks"][-1]):
