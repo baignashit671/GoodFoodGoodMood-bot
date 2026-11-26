@@ -17,7 +17,7 @@ Ken Burns motion on every shot and an original music bed. Host: Didi drawn as a 
    with `scripts/upload_youtube.py` (guarded to the cooking channel), writes `toon/results/<name>.json` + a line in
    `foodscience/_published.md` (shared topic log) on main, and deletes the branch. Never pushing APPROVED = a dry run.
 
-Optional secrets: `POLLINATIONS_API_KEY` (free at enter.pollinations.ai; removes the ~15 s throttle and watermark risk),
+Secrets: `POLLINATIONS_API_KEY` (sk_ key from enter.pollinations.ai, "Quest balance only" = never spends money; images then come from gen.pollinations.ai with no throttle, falling back to the free classic endpoint when the balance is empty; optional `"image_model"` in job.json, default flux),
 `CF_ACCOUNT_ID` + `CF_API_TOKEN` (Cloudflare Workers AI Flux fallback). None are required.
 
 ## job.json

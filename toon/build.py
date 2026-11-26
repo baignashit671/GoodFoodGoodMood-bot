@@ -142,25 +142,38 @@ def valid(p):
         return False
 
 
-def pollinations(prompt, dest, seed, key):
-    import requests
-    url = ("https://image.pollinations.ai/prompt/" + urllib.parse.quote(prompt) +
-           f"?width=1080&height=1920&seed={seed}&model=flux&nologo=true&enhance=false&negative_prompt=" + urllib.parse.quote(NEG))
-    hdr = {"User-Agent": "GoodFoodGoodMood-toon/1.0"}
+def pollinations(prompt, dest, seed, key, model="flux"):
+    """With a secret key: gen.pollinations.ai (no rate limit, spends the key's pollen balance).
+    Without a key, or if the key has no balance left: the free classic endpoint (1 image / 45 s per IP)."""
+    import re, requests
+    q = f"width=1080&height=1920&seed={seed}&nologo=true&enhance=false&negative_prompt=" + urllib.parse.quote(NEG)
+    tries = []
     if key:
-        hdr["Authorization"] = f"Bearer {key}"
-    try:
-        r = requests.get(url, headers=hdr, timeout=240)
-        if r.status_code == 200 and r.headers.get("content-type", "").startswith("image"):
-            dest.write_bytes(r.content)
-            return valid(dest)
-        log("pollinations", r.status_code, r.text[:200])
-        import re
-        m = re.search(r"[Rr]etry after (\d+)\s*s", r.text)
-        if m: time.sleep(int(m.group(1)) + 3)
-    except Exception as e:
-        log("pollinations error", e)
+        tries.append(("gen", f"https://gen.pollinations.ai/image/{urllib.parse.quote(prompt)}?model={model}&{q}",
+                      {"User-Agent": "GoodFoodGoodMood-toon/1.0", "Authorization": f"Bearer {key}"}))
+    tries.append(("classic", f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt)}?model=flux&{q}",
+                  {"User-Agent": "GoodFoodGoodMood-toon/1.0"}))
+    for tag, url, hdr in tries:
+        if tag == "classic" and key:
+            wait = 48 - (time.time() - _classic_last[0])
+            if wait > 0: time.sleep(wait)
+        try:
+            r = requests.get(url, headers=hdr, timeout=240)
+            if tag == "classic": _classic_last[0] = time.time()
+            if r.status_code == 200 and r.headers.get("content-type", "").startswith("image"):
+                dest.write_bytes(r.content)
+                if valid(dest):
+                    if tag == "classic" and key: log("  (key had no balance or failed: used the free classic endpoint)")
+                    return True
+            log("pollinations", tag, r.status_code, r.text[:200])
+            m = re.search(r"[Rr]etry after (\d+)\s*s", r.text)
+            if m and tag == "classic": time.sleep(int(m.group(1)) + 3)
+        except Exception as e:
+            log("pollinations", tag, "error", e)
     return False
+
+
+_classic_last = [0.0]
 
 
 def cloudflare(prompt, dest, seed):
@@ -207,7 +220,7 @@ def get_images(job, job_dir, work, demo):
                 wait = 48 - (time.time() - last)
                 if wait > 0: time.sleep(wait)
             seed = base + i * 17 + attempt * 1000
-            ok = pollinations(prompt, dest, seed, key); last = time.time()
+            ok = pollinations(prompt, dest, seed, key, job.get("image_model", "flux")); last = time.time()
             if ok: break
             if cloudflare(prompt, dest, seed): ok = True; break
             time.sleep(5)
