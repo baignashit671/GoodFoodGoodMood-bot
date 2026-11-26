@@ -154,6 +154,9 @@ def pollinations(prompt, dest, seed, key):
             dest.write_bytes(r.content)
             return valid(dest)
         log("pollinations", r.status_code, r.text[:200])
+        import re
+        m = re.search(r"[Rr]etry after (\d+)\s*s", r.text)
+        if m: time.sleep(int(m.group(1)) + 3)
     except Exception as e:
         log("pollinations error", e)
     return False
@@ -198,15 +201,15 @@ def get_images(job, job_dir, work, demo):
         if demo:
             demo_image(i, dest); paths.append(dest); continue
         prompt = scene_prompt(job, sc); ok = False
-        for attempt in range(4):
-            if not key:
-                wait = 16 - (time.time() - last)
+        for attempt in range(6):
+            if not key:   # anonymous free tier: 1 image / 45 s per IP
+                wait = 48 - (time.time() - last)
                 if wait > 0: time.sleep(wait)
             seed = base + i * 17 + attempt * 1000
             ok = pollinations(prompt, dest, seed, key); last = time.time()
             if ok: break
             if cloudflare(prompt, dest, seed): ok = True; break
-            time.sleep(10 * (attempt + 1))
+            time.sleep(5)
         if not ok:
             sys.exit(f"image for scene {i + 1} failed on every provider; not publishing a broken video")
         log(f"image {i + 1}/{len(job['scenes'])} ok")

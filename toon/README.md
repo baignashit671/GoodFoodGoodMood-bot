@@ -6,7 +6,7 @@ Ken Burns motion on every shot and an original music bed. Host: Didi drawn as a 
 
 **How it runs.** The daily Claude scheduled task writes only the script (`job.json`) and pushes a branch
 `toon/<YYYY-MM-DD>-<slug>` made from `main` that adds `toon_job/job.json`. `.github/workflows/publish-toon.yml` then does
-everything heavy on GitHub's free runner: images from Pollinations (Flux, free, no key) → edge-tts Hindi voice
+everything heavy on GitHub's free runner: images from Pollinations (Flux, free, no key: 1 image every ~45 s, so ~6-10 min for a Short) → edge-tts Hindi voice
 (`hi-IN-SwaraNeural`) → captions → banner/counter → music (`foodscience/kit/beats.py`) → MP4 (`toon/build.py`) → upload with
 `scripts/upload_youtube.py` (guarded to the cooking channel) → `toon/results/<name>.json` + a line in
 `foodscience/_published.md` (shared topic log) → deletes the branch. The MP4 and a review contact sheet are also kept as a
