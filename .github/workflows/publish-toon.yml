@@ -1,0 +1,116 @@
+# Builds AND publishes a "Desi Toon" Short (AI comic-illustration style) for GoodFoodGoodMood.
+# The daily Claude scheduled task pushes a branch toon/<name> made FROM main that adds toon_job/job.json
+# (see toon/README.md). This workflow generates the images (free Pollinations / Flux), the Hindi voice (edge-tts),
+# captions, banner + step counter, music, renders the MP4, then uploads it with the channel-guarded uploader.
+# "dry_run": true in job.json = build only: the MP4 + review sheet go to the run's artifacts, nothing is uploaded.
+name: Build + publish Desi Toon Short
+
+on:
+  push:
+    branches: ["toon/**"]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "toon/<name> branch to (re)build"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: toon-${{ github.ref_name || inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BRANCH: ${{ inputs.branch || github.ref_name }}
+    steps:
+      - name: Check out main (builder + log)
+        uses: actions/checkout@v4
+        with: { ref: main, path: main }
+
+      - name: Check out the toon branch (job)
+        uses: actions/checkout@v4
+        with: { ref: "${{ env.BRANCH }}", path: branch }
+
+      - name: Name + skip if already published
+        id: guard
+        run: |
+          name="${BRANCH#toon/}"; echo "name=$name" >> "$GITHUB_OUTPUT"
+          test -f branch/toon_job/job.json
+          dry=$(python3 -c "import json;print(str(json.load(open('branch/toon_job/job.json')).get('dry_run', False)).lower())")
+          echo "dry=$dry" >> "$GITHUB_OUTPUT"
+          if [ -f "main/toon/results/$name.json" ] && [ "$dry" != "true" ]; then
+            echo "Already published:"; cat "main/toon/results/$name.json"; echo "skip=true" >> "$GITHUB_OUTPUT"
+          else echo "skip=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/setup-python@v5
+        if: steps.guard.outputs.skip == 'false'
+        with: { python-version: "3.12" }
+
+      - name: Install tools
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          pip install -q "edge-tts>=7.2.0,<8" requests Pillow numpy scipy google-api-python-client google-auth
+
+      - name: Build the video (images + voice + captions + music)
+        if: steps.guard.outputs.skip == 'false'
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          python main/toon/build.py branch/toon_job/job.json pub
+          ffprobe -v error -show_entries format=duration:stream=width,height,codec_type -of compact pub/*.mp4
+
+      - name: Keep the video + review sheet as a run artifact
+        if: always() && steps.guard.outputs.skip == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: toon-${{ steps.guard.outputs.name }}
+          path: pub/
+          retention-days: 7
+
+      - name: Upload to YouTube
+        if: steps.guard.outputs.skip == 'false' && steps.guard.outputs.dry != 'true'
+        id: yt
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          EXPECTED_CHANNEL_ID: UC_ShLTZzCGP-nAmO-yqDRRw
+        run: |
+          if [ -z "$GOOGLE_CREDENTIALS" ]; then echo "::error::Secret GOOGLE_CREDENTIALS is missing (run reauth_youtube.py)"; exit 1; fi
+          mkdir -p up && cp pub/*.mp4 pub/metadata.json up/
+          python main/scripts/upload_youtube.py up
+
+      - name: Record the result on main
+        if: steps.guard.outputs.skip == 'false'
+        env:
+          NAME: ${{ steps.guard.outputs.name }}
+          URL: ${{ steps.yt.outputs.url }}
+          DRY: ${{ steps.guard.outputs.dry }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          cd main
+          mkdir -p toon/results
+          python - <<'PY'
+          import json, os, datetime
+          m = json.load(open('../pub/metadata.json'))
+          name, url, dry = os.environ['NAME'], os.environ.get('URL', ''), os.environ['DRY'] == 'true'
+          d = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+          json.dump({'name': name, 'url': url, 'dry_run': dry, 'run': os.environ['RUN_URL'], 'title': m['title'],
+                     'privacy': m.get('privacy', 'public'), 'date': d, 'music': m.get('music', '')},
+                    open(f'toon/results/{name}.json', 'w'), indent=1, ensure_ascii=False)
+          if not dry and m.get('privacy', 'public') == 'public':
+              open('foodscience/_published.md', 'a', encoding='utf-8').write(f"- {d} | {m.get('topic','')} | {m.get('style','desi-toon')} | {m['title']} | {url}\n")
+          PY
+          git config user.name "shorts-bot"; git config user.email "shorts-bot@users.noreply.github.com"
+          git add -A && git commit -m "toon result (dry_run=$DRY): $NAME $URL"
+          for i in 1 2 3; do git pull --rebase -q && git push && break; sleep 5; done
+
+      - name: Delete the toon branch
+        if: success()
+        run: git -C main push origin --delete "$BRANCH" || true
