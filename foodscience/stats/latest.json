@@ -1,11 +1,38 @@
 {
- "updated": "2026-11-27T09:29Z",
+ "updated": "2026-11-27T19:23Z",
  "channel": {
-  "viewCount": 2299,
+  "viewCount": 2300,
   "subscriberCount": 35,
-  "videoCount": 28
+  "videoCount": 30
  },
  "videos": [
+  {
+   "id": "6UvL-7EBcIM",
+   "url": "https://www.youtube.com/watch?v=6UvL-7EBcIM",
+   "title": "Chole Bhature Recipe | Phoole Phoole Bhature #shorts",
+   "published": "2026-11-27T15:22:08Z",
+   "duration": "PT55S",
+   "category_id": "26",
+   "views": 0,
+   "likes": 0,
+   "comments": 0,
+   "hours_live": 4.0,
+   "views_per_hour": 0.0,
+   "source": "other"
+  },
+  {
+   "id": "dRDz-DREC-M",
+   "url": "https://www.youtube.com/watch?v=dRDz-DREC-M",
+   "title": "Jeera Rice Recipe | Khila Khila Hotel Jaisa #shorts",
+   "published": "2026-11-27T12:29:04Z",
+   "duration": "PT44S",
+   "category_id": "26",
+   "views": 7,
+   "likes": 2,
+   "comments": 0,
+   "hours_live": 6.9,
+   "views_per_hour": 1.0
+  },
   {
    "id": "urhB-hmouzw",
    "url": "https://www.youtube.com/watch?v=urhB-hmouzw",
@@ -16,7 +43,7 @@
    "views": 5,
    "likes": 2,
    "comments": 0,
-   "hours_live": 21.1,
+   "hours_live": 31.0,
    "views_per_hour": 0.2
   },
   {
@@ -26,11 +53,11 @@
    "published": "2026-11-25T12:37:58Z",
    "duration": "PT50S",
    "category_id": "26",
-   "views": 74,
+   "views": 75,
    "likes": 1,
    "comments": 0,
-   "hours_live": 44.9,
-   "views_per_hour": 1.6
+   "hours_live": 54.8,
+   "views_per_hour": 1.4
   },
   {
    "id": "VguwaVmKX7k",
@@ -39,11 +66,11 @@
    "published": "2026-11-24T12:29:35Z",
    "duration": "PT49S",
    "category_id": "26",
-   "views": 65,
+   "views": 66,
    "likes": 1,
    "comments": 0,
-   "hours_live": 69.0,
-   "views_per_hour": 0.9
+   "hours_live": 78.9,
+   "views_per_hour": 0.8
   },
   {
    "id": "h3WrOuZZvtk",
@@ -55,7 +82,7 @@
    "views": 7,
    "likes": 3,
    "comments": 0,
-   "hours_live": 89.7,
+   "hours_live": 99.6,
    "views_per_hour": 0.1,
    "date": "2026-11-23",
    "topic": "why water doesn't stop chilli burn",
@@ -71,7 +98,7 @@
    "views": 75,
    "likes": 1,
    "comments": 0,
-   "hours_live": 116.0,
+   "hours_live": 125.9,
    "views_per_hour": 0.6,
    "source": "other"
   },
@@ -85,7 +112,7 @@
    "views": 13,
    "likes": 1,
    "comments": 1,
-   "hours_live": 140.0,
+   "hours_live": 149.9,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -99,8 +126,8 @@
    "views": 8,
    "likes": 2,
    "comments": 0,
-   "hours_live": 159.1,
-   "views_per_hour": 0.1,
+   "hours_live": 169.0,
+   "views_per_hour": 0.0,
    "source": "other"
   },
   {
@@ -113,7 +140,7 @@
    "views": 12,
    "likes": 2,
    "comments": 1,
-   "hours_live": 164.2,
+   "hours_live": 174.1,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -127,7 +154,7 @@
    "views": 4,
    "likes": 2,
    "comments": 1,
-   "hours_live": 187.9,
+   "hours_live": 197.7,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -141,7 +168,7 @@
    "views": 17,
    "likes": 2,
    "comments": 1,
-   "hours_live": 212.1,
+   "hours_live": 222.0,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -155,7 +182,7 @@
    "views": 16,
    "likes": 2,
    "comments": 0,
-   "hours_live": 236.0,
+   "hours_live": 245.9,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -169,7 +196,7 @@
    "views": 8,
    "likes": 2,
    "comments": 0,
-   "hours_live": 253.8,
+   "hours_live": 263.7,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -183,7 +210,7 @@
    "views": 20,
    "likes": 2,
    "comments": 0,
-   "hours_live": 255.1,
+   "hours_live": 265.0,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -197,7 +224,7 @@
    "views": 11,
    "likes": 2,
    "comments": 0,
-   "hours_live": 286.6,
+   "hours_live": 296.4,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -211,7 +238,7 @@
    "views": 20,
    "likes": 5,
    "comments": 2,
-   "hours_live": 7751.6,
+   "hours_live": 7761.5,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -225,7 +252,7 @@
    "views": 28,
    "likes": 5,
    "comments": 2,
-   "hours_live": 8799.7,
+   "hours_live": 8809.6,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -239,7 +266,7 @@
    "views": 24,
    "likes": 5,
    "comments": 1,
-   "hours_live": 8832.2,
+   "hours_live": 8842.1,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -253,7 +280,7 @@
    "views": 50,
    "likes": 4,
    "comments": 1,
-   "hours_live": 11471.2,
+   "hours_live": 11481.1,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -267,7 +294,7 @@
    "views": 355,
    "likes": 8,
    "comments": 0,
-   "hours_live": 11638.7,
+   "hours_live": 11648.6,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -281,7 +308,7 @@
    "views": 32,
    "likes": 3,
    "comments": 1,
-   "hours_live": 11639.3,
+   "hours_live": 11649.2,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -295,7 +322,7 @@
    "views": 248,
    "likes": 6,
    "comments": 1,
-   "hours_live": 11707.9,
+   "hours_live": 11717.8,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -309,7 +336,7 @@
    "views": 62,
    "likes": 3,
    "comments": 0,
-   "hours_live": 11725.8,
+   "hours_live": 11735.7,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -323,7 +350,7 @@
    "views": 931,
    "likes": 21,
    "comments": 0,
-   "hours_live": 11726.2,
+   "hours_live": 11736.1,
    "views_per_hour": 0.1,
    "source": "other"
   },
@@ -337,7 +364,7 @@
    "views": 29,
    "likes": 4,
    "comments": 2,
-   "hours_live": 11758.9,
+   "hours_live": 11768.8,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -351,7 +378,7 @@
    "views": 23,
    "likes": 5,
    "comments": 1,
-   "hours_live": 11759.5,
+   "hours_live": 11769.4,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -365,7 +392,7 @@
    "views": 90,
    "likes": 4,
    "comments": 1,
-   "hours_live": 13433.5,
+   "hours_live": 13443.4,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -379,7 +406,7 @@
    "views": 39,
    "likes": 6,
    "comments": 1,
-   "hours_live": 16103.4,
+   "hours_live": 16113.2,
    "views_per_hour": 0.0,
    "source": "other"
   },
@@ -393,7 +420,7 @@
    "views": 34,
    "likes": 5,
    "comments": 0,
-   "hours_live": 16126.6,
+   "hours_live": 16136.5,
    "views_per_hour": 0.0,
    "source": "other"
   }
