@@ -1,3 +1,0 @@
-stream|codec_type=video|width=1080|height=1920
-stream|codec_type=audio
-format|duration=13.666667
