@@ -2,7 +2,7 @@
 
 The look of the viral Indian "cartoon explainer" Reels: 2D webtoon-style AI illustrations with bold ink outlines, a cream
 title banner with a red rim, a flip-clock step counter (1, 2, 3...), Hindi voice, Roman Hinglish word-synced captions,
-Ken Burns motion on every shot and an original music bed. Host: Didi drawn as a 2D cartoon (same identity as the 3D Didi).
+Ken Burns motion on every shot and an original music bed. Host: a young Indian Muslim woman drawn as a 2D cartoon (pastel pink hijab, mint-green salwar kameez with gold embroidery and dupatta); she is still flagged `"didi": true` in job.json.
 
 **How it runs (two phases on one branch `toon/<YYYY-MM-DD>-<slug>`, made from `main`).**
 1. BUILD: the daily Claude scheduled task writes only the script and pushes the branch with `toon_job/job.json`.
@@ -22,7 +22,7 @@ Secrets: `POLLINATIONS_API_KEY` (sk_ key from enter.pollinations.ai, "Quest bala
 
 ## job.json
 See `example_job.json` (masala chai). Rules:
-- `character`: Didi's fixed character sheet, pasted into every prompt of a scene with `"didi": true`. Never change it.
+- `character`: the host's fixed character sheet, pasted into every prompt of a scene with `"didi": true`. Never change it.
 - `style`: fixed art-style suffix (keep the one in the example).
 - One scene = one line = one cut (1.5-3 s). `say` = Devanagari Hindi; `caps` = the same words in Roman Hinglish, exactly one
   caption word per spoken word, chunks of 1-3 words split with `|`, one `*YELLOW` word per chunk.
