@@ -6,3 +6,4 @@ One line per published Short: date | topic | style | title | YouTube link. Writt
 - 2026-11-26 | Dal Tadka recipe | didi-recipe-3d | Dal Tadka Recipe | Dhabe Jaisi Ghar Par #shorts | https://www.youtube.com/watch?v=urhB-hmouzw
 - 2026-11-27 | Jeera Rice recipe | didi-recipe-3d | Jeera Rice Recipe | Khila Khila Hotel Jaisa #shorts | https://www.youtube.com/watch?v=dRDz-DREC-M
 - 2026-11-27 | Chole Bhature recipe | desi-toon | Chole Bhature Recipe | Phoole Phoole Bhature #shorts | https://www.youtube.com/watch?v=6UvL-7EBcIM
+- 2026-11-28 | Pav Bhaji recipe | didi-recipe-3d | Pav Bhaji Recipe | Mumbai Jaisi Makkhan Wali #shorts | https://www.youtube.com/watch?v=ao_tOj9U6qk
